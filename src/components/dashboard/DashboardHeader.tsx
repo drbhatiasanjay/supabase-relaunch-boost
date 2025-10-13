@@ -1,0 +1,102 @@
+import { Bookmark, LogOut, Search, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus } from "lucide-react";
+
+interface DashboardHeaderProps {
+  userEmail: string;
+  onSignOut: () => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  onAddClick: () => void;
+}
+
+export const DashboardHeader = ({
+  userEmail,
+  onSignOut,
+  searchQuery,
+  onSearchChange,
+  onAddClick,
+}: DashboardHeaderProps) => {
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 backdrop-blur-lg bg-background/80">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between max-w-7xl">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-primary blur-lg opacity-50" />
+            <div className="relative bg-gradient-primary p-2 rounded-xl">
+              <Bookmark className="w-5 h-5 text-white" />
+            </div>
+          </div>
+          <h1 className="text-xl font-bold gradient-text">BookmarkHub</h1>
+        </div>
+
+        <div className="flex-1 max-w-md mx-8 hidden md:block">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search bookmarks, tags, descriptions..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={onAddClick}
+            className="bg-gradient-primary hover:opacity-90 transition-opacity"
+            size="sm"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Bookmark
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="rounded-full">
+                <User className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <div className="flex flex-col space-y-1">
+                  <p className="text-sm font-medium">Account</p>
+                  <p className="text-xs text-muted-foreground">{userEmail}</p>
+                </div>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onSignOut}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      <div className="md:hidden px-4 pb-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
+    </header>
+  );
+};
