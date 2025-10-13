@@ -1,0 +1,17 @@
+-- Insert test bookmarks for the user
+INSERT INTO public.bookmarks (user_id, title, url, description, tags, category, reading) VALUES
+('00c93726-e58d-4f12-bfcb-2b76f237b652', 'React Documentation', 'https://react.dev', 'Official React documentation with hooks, components, and best practices', ARRAY['react', 'javascript', 'frontend', 'documentation'], 'Development', false),
+('00c93726-e58d-4f12-bfcb-2b76f237b652', 'Tailwind CSS', 'https://tailwindcss.com', 'Utility-first CSS framework for rapid UI development', ARRAY['css', 'tailwind', 'design', 'frontend'], 'Development', true),
+('00c93726-e58d-4f12-bfcb-2b76f237b652', 'Supabase Guides', 'https://supabase.com/docs', 'Complete guide to building with Supabase - database, auth, storage', ARRAY['supabase', 'backend', 'database', 'auth'], 'Development', true),
+('00c93726-e58d-4f12-bfcb-2b76f237b652', 'TypeScript Handbook', 'https://www.typescriptlang.org/docs/handbook/intro.html', 'Comprehensive guide to TypeScript language features', ARRAY['typescript', 'javascript', 'programming'], 'Learning', false),
+('00c93726-e58d-4f12-bfcb-2b76f237b652', 'Figma Design System', 'https://www.figma.com/community', 'UI/UX design resources and component libraries', ARRAY['design', 'ui', 'ux', 'figma'], 'Design', false),
+('00c93726-e58d-4f12-bfcb-2b76f237b652', 'CSS Tricks', 'https://css-tricks.com', 'Tips, tricks, and techniques on using CSS', ARRAY['css', 'frontend', 'design', 'tutorial'], 'Learning', true),
+('00c93726-e58d-4f12-bfcb-2b76f237b652', 'GitHub Trending', 'https://github.com/trending', 'Discover trending repositories and developers', ARRAY['github', 'opensource', 'development'], 'Tools', false),
+('00c93726-e58d-4f12-bfcb-2b76f237b652', 'Notion Templates', 'https://www.notion.so/templates', 'Pre-built templates for productivity and organization', ARRAY['notion', 'productivity', 'templates'], 'Productivity', false),
+('00c93726-e58d-4f12-bfcb-2b76f237b652', 'MDN Web Docs', 'https://developer.mozilla.org', 'Resources for developers, by developers', ARRAY['javascript', 'html', 'css', 'reference'], 'Learning', true),
+('00c93726-e58d-4f12-bfcb-2b76f237b652', 'Can I Use', 'https://caniuse.com', 'Browser support tables for modern web technologies', ARRAY['browser', 'compatibility', 'reference'], 'Tools', false),
+('00c93726-e58d-4f12-bfcb-2b76f237b652', 'Stack Overflow', 'https://stackoverflow.com', 'Q&A platform for programmers and developers', ARRAY['qa', 'programming', 'community'], 'Community', false),
+('00c93726-e58d-4f12-bfcb-2b76f237b652', 'Dribbble Design Inspiration', 'https://dribbble.com', 'Discover the world''s top designers and creative professionals', ARRAY['design', 'inspiration', 'ui'], 'Design', false),
+('00c93726-e58d-4f12-bfcb-2b76f237b652', 'Free Code Camp', 'https://www.freecodecamp.org', 'Learn to code for free with interactive tutorials', ARRAY['learning', 'tutorial', 'free', 'programming'], 'Learning', true),
+('00c93726-e58d-4f12-bfcb-2b76f237b652', 'Dev.to Community', 'https://dev.to', 'Community of software developers sharing knowledge', ARRAY['community', 'blog', 'programming'], 'Community', false),
+('00c93726-e58d-4f12-bfcb-2b76f237b652', 'Vercel Deployment', 'https://vercel.com', 'Platform for frontend frameworks and static sites', ARRAY['deployment', 'hosting', 'vercel'], 'Tools', false);
