@@ -293,7 +293,7 @@ const Dashboard = () => {
           />
         </div>
 
-        <main className={`flex-1 px-4 py-8 mx-auto w-full transition-all duration-300 ${isSidebarOpen ? 'max-w-6xl' : 'max-w-7xl'}`}>
+        <main className={`flex-1 px-4 py-6 mx-auto w-full transition-all duration-300 ${isSidebarOpen ? 'max-w-7xl' : 'max-w-[1600px]'}`}>
           <DashboardStats
             total={stats.total}
             reading={stats.reading}
