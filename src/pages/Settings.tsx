@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Phone, Save } from "lucide-react";
+import { ArrowLeft, Phone, Save, MessageCircle } from "lucide-react";
 import { z } from "zod";
 
 const phoneSchema = z.object({
@@ -23,6 +23,7 @@ const Settings = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [telegramId, setTelegramId] = useState("");
   const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
@@ -46,7 +47,7 @@ const Settings = () => {
 
       const { data, error } = await supabase
         .from("profiles")
-        .select("phone_number")
+        .select("phone_number, telegram_id")
         .eq("user_id", user.id)
         .single();
 
@@ -58,6 +59,9 @@ const Settings = () => {
       if (data?.phone_number) {
         setPhoneNumber(data.phone_number);
       }
+      if (data?.telegram_id) {
+        setTelegramId(data.telegram_id);
+      }
     } catch (error) {
       console.error("Error:", error);
     }
@@ -65,32 +69,38 @@ const Settings = () => {
 
   const handleSave = async () => {
     try {
-      // Validate phone number
-      const validation = phoneSchema.safeParse({ phone_number: phoneNumber });
-      
-      if (!validation.success) {
-        toast({
-          title: "Invalid Phone Number",
-          description: validation.error.errors[0].message,
-          variant: "destructive",
-        });
-        return;
+      // Validate phone number if provided
+      if (phoneNumber) {
+        const validation = phoneSchema.safeParse({ phone_number: phoneNumber });
+        
+        if (!validation.success) {
+          toast({
+            title: "Invalid Phone Number",
+            description: validation.error.errors[0].message,
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      const updateData: { phone_number?: string; telegram_id?: string } = {};
+      if (phoneNumber) updateData.phone_number = phoneNumber;
+      if (telegramId) updateData.telegram_id = telegramId;
+
       const { error } = await supabase
         .from("profiles")
-        .update({ phone_number: phoneNumber })
+        .update(updateData)
         .eq("user_id", user.id);
 
       if (error) throw error;
 
       toast({
         title: "✅ Settings Saved",
-        description: "Your WhatsApp phone number has been updated",
+        description: "Your integration settings have been updated",
       });
     } catch (error) {
       console.error("Error saving settings:", error);
@@ -122,7 +132,7 @@ const Settings = () => {
           <div>
             <h1 className="text-3xl font-bold gradient-text">Settings</h1>
             <p className="text-muted-foreground mt-2">
-              Manage your account and WhatsApp integration settings
+              Manage your account and messaging integration settings
             </p>
           </div>
 
@@ -191,14 +201,50 @@ const Settings = () => {
             </CardContent>
           </Card>
 
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageCircle className="h-5 w-5" />
+                Telegram Integration
+              </CardTitle>
+              <CardDescription>
+                Add your Telegram ID to enable chat integration via n8n
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="telegram">Telegram ID</Label>
+                <Input
+                  id="telegram"
+                  type="text"
+                  placeholder="Your Telegram user ID"
+                  value={telegramId}
+                  onChange={(e) => setTelegramId(e.target.value)}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Don't know your Telegram ID? Message your bot and it will show you.
+                </p>
+              </div>
+
+              <Button
+                onClick={handleSave}
+                disabled={loading || (!phoneNumber && !telegramId)}
+                className="w-full gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {loading ? "Saving..." : "Save Settings"}
+              </Button>
+            </CardContent>
+          </Card>
+
           <Card className="glass-card border-primary/20">
             <CardHeader>
               <CardTitle className="text-sm">📱 Next Steps</CardTitle>
             </CardHeader>
             <CardContent className="text-sm space-y-2 text-muted-foreground">
-              <p>After adding your phone number:</p>
+              <p>After adding your Telegram ID or phone number:</p>
               <ol className="list-decimal list-inside space-y-1 ml-2">
-                <li>Set up n8n workflow with Whapi/Telegram</li>
+                <li>Set up n8n workflow with Telegram/WhatsApp</li>
                 <li>Configure webhook to call the chat edge function</li>
                 <li>Test by sending "reading list" to your bot</li>
               </ol>
