@@ -105,6 +105,7 @@ export type Database = {
           email: string
           id: string
           phone_number: string | null
+          telegram_id: string | null
           updated_at: string
           user_id: string
         }
@@ -113,6 +114,7 @@ export type Database = {
           email: string
           id?: string
           phone_number?: string | null
+          telegram_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -121,6 +123,7 @@ export type Database = {
           email?: string
           id?: string
           phone_number?: string | null
+          telegram_id?: string | null
           updated_at?: string
           user_id?: string
         }

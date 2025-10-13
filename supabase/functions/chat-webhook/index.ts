@@ -32,17 +32,36 @@ serve(async (req) => {
     
     console.log('Received chat message:', { phone, message });
 
-    // 1. Map phone to user
-    const { data: profile, error: profileError } = await supabase
+    // 1. Map phone/telegram_id to user
+    // First try telegram_id, then phone_number
+    let profile = null;
+    let profileError = null;
+
+    // Try telegram_id first (for Telegram integration)
+    const { data: telegramProfile, error: telegramError } = await supabase
       .from('profiles')
       .select('user_id')
-      .eq('phone_number', phone)
-      .single();
+      .eq('telegram_id', phone)
+      .maybeSingle();
 
-    if (profileError || !profile) {
+    if (telegramProfile) {
+      profile = telegramProfile;
+    } else {
+      // Fallback to phone_number (for WhatsApp or SMS)
+      const { data: phoneProfile, error: phoneError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('phone_number', phone)
+        .maybeSingle();
+      
+      profile = phoneProfile;
+      profileError = phoneError;
+    }
+
+    if (!profile) {
       return new Response(
         JSON.stringify({ 
-          reply: "📱 Phone number not registered. Please add your phone number in your profile settings." 
+          reply: "📱 Not registered. Please add your Telegram ID or phone number in your profile settings.\n\nYour Telegram ID: " + phone 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
