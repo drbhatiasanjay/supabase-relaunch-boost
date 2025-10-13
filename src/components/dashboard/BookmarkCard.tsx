@@ -36,7 +36,7 @@ export const BookmarkCard = ({
   };
 
   return (
-    <Card className={`glass-card group hover:shadow-lg transition-all duration-300 overflow-hidden ${isSelected ? "ring-2 ring-primary" : ""}`}>
+    <Card className={`glass-card group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden ${isSelected ? "ring-2 ring-primary scale-[1.02]" : ""} cursor-pointer hover:scale-[1.02]`}>
       <div className="p-3 space-y-2">
         <div className="flex items-start gap-2">
           {onToggleSelection && (

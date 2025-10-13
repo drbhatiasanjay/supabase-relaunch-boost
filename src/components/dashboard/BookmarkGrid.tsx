@@ -59,15 +59,23 @@ export const BookmarkGrid = ({
 
   return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
-        {bookmarks.map((bookmark) => (
-          <BookmarkCard
+        {bookmarks.map((bookmark, index) => (
+          <div
             key={bookmark.id}
-            bookmark={bookmark}
-            onDelete={onDelete}
-            onToggleReading={onToggleReading}
-            isSelected={selectedBookmarks?.has(bookmark.id)}
-            onToggleSelection={onToggleSelection}
-          />
+            className="animate-fade-in"
+            style={{ 
+              animationDelay: `${index * 50}ms`,
+              animationFillMode: 'both'
+            }}
+          >
+            <BookmarkCard
+              bookmark={bookmark}
+              onDelete={onDelete}
+              onToggleReading={onToggleReading}
+              isSelected={selectedBookmarks?.has(bookmark.id)}
+              onToggleSelection={onToggleSelection}
+            />
+          </div>
         ))}
       </div>
   );
