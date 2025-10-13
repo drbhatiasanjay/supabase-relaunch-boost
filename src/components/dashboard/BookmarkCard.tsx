@@ -37,7 +37,7 @@ export const BookmarkCard = ({
 
   return (
     <Card className={`glass-card group hover:shadow-lg transition-all duration-300 overflow-hidden ${isSelected ? "ring-2 ring-primary" : ""}`}>
-      <div className="p-6 space-y-4">
+      <div className="p-4 space-y-3">
         <div className="flex items-start justify-between gap-3">
           {onToggleSelection && (
             <Checkbox
@@ -53,7 +53,7 @@ export const BookmarkCard = ({
               rel="noopener noreferrer"
               className="block group/link"
             >
-              <h3 className="font-semibold text-lg mb-1 line-clamp-2 group-hover/link:text-primary transition-colors">
+              <h3 className="font-semibold text-base mb-1 line-clamp-2 group-hover/link:text-primary transition-colors">
                 {bookmark.title}
               </h3>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -99,7 +99,7 @@ export const BookmarkCard = ({
         </div>
 
         {bookmark.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <p className="text-xs text-muted-foreground line-clamp-2">
             {bookmark.description}
           </p>
         )}
@@ -118,7 +118,7 @@ export const BookmarkCard = ({
           ))}
         </div>
 
-        <div className="text-xs text-muted-foreground pt-2 border-t border-border/50">
+        <div className="text-xs text-muted-foreground pt-1.5 border-t border-border/50">
           Added {formatDistanceToNow(new Date(bookmark.created_at), { addSuffix: true })}
         </div>
       </div>
