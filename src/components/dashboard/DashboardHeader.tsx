@@ -1,4 +1,4 @@
-import { Bookmark, LogOut, Search, User, Download, Upload, LayoutGrid, List, AlignJustify, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Bookmark, LogOut, Search, User, Download, Upload, LayoutGrid, List, AlignJustify, PanelLeftClose, PanelLeft, Settings as SettingsIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -132,6 +132,10 @@ export const DashboardHeader = ({
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => window.location.href = '/settings'}>
+                <SettingsIcon className="w-4 h-4 mr-2" />
+                Settings
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={onSignOut}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
