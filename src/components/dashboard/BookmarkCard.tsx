@@ -2,6 +2,7 @@ import { Bookmark } from "@/pages/Dashboard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,9 +16,17 @@ interface BookmarkCardProps {
   bookmark: Bookmark;
   onDelete: (id: string) => void;
   onToggleReading: (id: string, currentStatus: boolean) => void;
+  isSelected?: boolean;
+  onToggleSelection?: (id: string) => void;
 }
 
-export const BookmarkCard = ({ bookmark, onDelete, onToggleReading }: BookmarkCardProps) => {
+export const BookmarkCard = ({ 
+  bookmark, 
+  onDelete, 
+  onToggleReading,
+  isSelected,
+  onToggleSelection
+}: BookmarkCardProps) => {
   const getDomain = (url: string) => {
     try {
       return new URL(url).hostname.replace('www.', '');
@@ -27,9 +36,16 @@ export const BookmarkCard = ({ bookmark, onDelete, onToggleReading }: BookmarkCa
   };
 
   return (
-    <Card className="glass-card group hover:shadow-lg transition-all duration-300 overflow-hidden">
+    <Card className={`glass-card group hover:shadow-lg transition-all duration-300 overflow-hidden ${isSelected ? "ring-2 ring-primary" : ""}`}>
       <div className="p-6 space-y-4">
         <div className="flex items-start justify-between gap-3">
+          {onToggleSelection && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => onToggleSelection(bookmark.id)}
+              className="mt-1"
+            />
+          )}
           <div className="flex-1 min-w-0">
             <a
               href={bookmark.url}

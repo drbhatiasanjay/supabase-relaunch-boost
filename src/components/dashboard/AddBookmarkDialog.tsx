@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -27,9 +27,21 @@ interface AddBookmarkDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  prefillData?: {
+    url?: string;
+    title?: string;
+    description?: string;
+  };
+  folderId?: string | null;
 }
 
-export const AddBookmarkDialog = ({ open, onOpenChange, onSuccess }: AddBookmarkDialogProps) => {
+export const AddBookmarkDialog = ({ 
+  open, 
+  onOpenChange, 
+  onSuccess, 
+  prefillData,
+  folderId 
+}: AddBookmarkDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
@@ -37,6 +49,38 @@ export const AddBookmarkDialog = ({ open, onOpenChange, onSuccess }: AddBookmark
   const [reading, setReading] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (prefillData) {
+      setUrl(prefillData.url || "");
+      setTitle(prefillData.title || "");
+      setDescription(prefillData.description || "");
+    }
+  }, [prefillData]);
+
+  useEffect(() => {
+    if (open) {
+      fetchAvailableTags();
+    }
+  }, [open]);
+
+  const fetchAvailableTags = async () => {
+    try {
+      const { data: bookmarks } = await supabase
+        .from("bookmarks")
+        .select("tags");
+      
+      const allTags = new Set<string>();
+      bookmarks?.forEach(b => {
+        b.tags?.forEach((tag: string) => allTags.add(tag));
+      });
+      
+      setAvailableTags(Array.from(allTags));
+    } catch (error) {
+      console.error("Failed to fetch tags");
+    }
+  };
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && tagInput.trim()) {
@@ -78,6 +122,7 @@ export const AddBookmarkDialog = ({ open, onOpenChange, onSuccess }: AddBookmark
         description: validated.description || null,
         tags,
         reading,
+        folder_id: folderId,
       });
 
       if (error) throw error;
@@ -161,7 +206,13 @@ export const AddBookmarkDialog = ({ open, onOpenChange, onSuccess }: AddBookmark
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleAddTag}
               disabled={loading}
+              list="tag-suggestions"
             />
+            <datalist id="tag-suggestions">
+              {availableTags.map((tag) => (
+                <option key={tag} value={tag} />
+              ))}
+            </datalist>
             {tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {tags.map((tag) => (
@@ -177,6 +228,12 @@ export const AddBookmarkDialog = ({ open, onOpenChange, onSuccess }: AddBookmark
                   </Badge>
                 ))}
               </div>
+            )}
+            {availableTags.length > 0 && tags.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Suggestions: {availableTags.slice(0, 5).join(", ")}
+                {availableTags.length > 5 ? "..." : ""}
+              </p>
             )}
           </div>
 

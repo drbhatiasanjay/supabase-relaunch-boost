@@ -9,6 +9,8 @@ interface BookmarkGridProps {
   onDelete: (id: string) => void;
   onToggleReading: (id: string, currentStatus: boolean) => void;
   onRefresh: () => void;
+  selectedBookmarks?: Set<string>;
+  onToggleSelection?: (id: string) => void;
 }
 
 export const BookmarkGrid = ({
@@ -17,6 +19,8 @@ export const BookmarkGrid = ({
   onDelete,
   onToggleReading,
   onRefresh,
+  selectedBookmarks,
+  onToggleSelection,
 }: BookmarkGridProps) => {
   if (loading) {
     return (
@@ -54,15 +58,17 @@ export const BookmarkGrid = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {bookmarks.map((bookmark) => (
-        <BookmarkCard
-          key={bookmark.id}
-          bookmark={bookmark}
-          onDelete={onDelete}
-          onToggleReading={onToggleReading}
-        />
-      ))}
-    </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {bookmarks.map((bookmark) => (
+          <BookmarkCard
+            key={bookmark.id}
+            bookmark={bookmark}
+            onDelete={onDelete}
+            onToggleReading={onToggleReading}
+            isSelected={selectedBookmarks?.has(bookmark.id)}
+            onToggleSelection={onToggleSelection}
+          />
+        ))}
+      </div>
   );
 };
