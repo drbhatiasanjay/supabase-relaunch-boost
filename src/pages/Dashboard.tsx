@@ -302,61 +302,60 @@ const Dashboard = () => {
             onFilterChange={setSelectedFilter}
           />
 
-          <div className="mb-6 flex gap-3">
+          {/* Filters and Tag Management Row */}
+          <div className="flex flex-wrap items-center gap-3 mb-6">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.filter(c => c !== "all").map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={sortBy} onValueChange={(val) => setSortBy(val as "date" | "title" | "category")}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">
+                  <div className="flex items-center gap-2">
+                    <ArrowUpDown className="w-4 h-4" />
+                    By Date
+                  </div>
+                </SelectItem>
+                <SelectItem value="title">
+                  <div className="flex items-center gap-2">
+                    <ArrowUpDown className="w-4 h-4" />
+                    By Title
+                  </div>
+                </SelectItem>
+                <SelectItem value="category">
+                  <div className="flex items-center gap-2">
+                    <ArrowUpDown className="w-4 h-4" />
+                    By Category
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
             <TagManager
               selectedTags={selectedTags}
               onTagsChange={setSelectedTags}
               availableTags={allTags}
             />
+
             <BookmarkletGuide />
+
+            <div className="ml-auto text-sm text-muted-foreground flex items-center">
+              {filteredBookmarks.length} bookmark{filteredBookmarks.length !== 1 ? 's' : ''}
+            </div>
           </div>
-
-          {/* Filters and Sorting */}
-          <div className="flex flex-wrap gap-3 mb-6">
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.filter(c => c !== "all").map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <Select value={sortBy} onValueChange={(val) => setSortBy(val as "date" | "title" | "category")}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="date">
-                <div className="flex items-center gap-2">
-                  <ArrowUpDown className="w-4 h-4" />
-                  Sort by Date
-                </div>
-              </SelectItem>
-              <SelectItem value="title">
-                <div className="flex items-center gap-2">
-                  <ArrowUpDown className="w-4 h-4" />
-                  Sort by Title
-                </div>
-              </SelectItem>
-              <SelectItem value="category">
-                <div className="flex items-center gap-2">
-                  <ArrowUpDown className="w-4 h-4" />
-                  Sort by Category
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-
-          <div className="ml-auto text-sm text-muted-foreground flex items-center">
-            {filteredBookmarks.length} bookmark{filteredBookmarks.length !== 1 ? 's' : ''}
-          </div>
-        </div>
 
           {/* View Modes */}
           {viewMode === "grid" && (

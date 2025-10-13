@@ -154,146 +154,177 @@ export const TagManager = ({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" variant="outline">
-              <Tag className="w-4 h-4 mr-2" />
-              Manage Tags
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>
-                {editingTag ? "Edit Tag" : "Manage Tags"}
-              </DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>
-                  {editingTag ? "Edit Tag Name" : "Create New Tag"}
-                </Label>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Tag name"
-                    value={newTagName}
-                    onChange={(e) => setNewTagName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        editingTag ? handleUpdateTag() : handleCreateTag();
-                      }
+    <div className="flex items-center gap-2">
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button size="sm" variant="outline" className="h-9">
+            <Tag className="w-4 h-4 mr-2" />
+            Tags
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {editingTag ? "Edit Tag" : "Manage Tags"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>
+                {editingTag ? "Edit Tag Name" : "Create New Tag"}
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Tag name"
+                  value={newTagName}
+                  onChange={(e) => setNewTagName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      editingTag ? handleUpdateTag() : handleCreateTag();
+                    }
+                  }}
+                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button size="icon" variant="outline">
+                      <Palette className="w-4 h-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-3">
+                    <div className="grid grid-cols-4 gap-2">
+                      {tagColors.map((color) => (
+                        <button
+                          key={color}
+                          className={`w-8 h-8 rounded-md border-2 ${
+                            selectedColor === color
+                              ? "border-foreground"
+                              : "border-transparent"
+                          }`}
+                          style={{ backgroundColor: color }}
+                          onClick={() => setSelectedColor(color)}
+                        />
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <Button
+                  onClick={editingTag ? handleUpdateTag : handleCreateTag}
+                >
+                  {editingTag ? "Update" : "Create"}
+                </Button>
+              </div>
+              {editingTag && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setEditingTag(null);
+                    setNewTagName("");
+                  }}
+                >
+                  Cancel Edit
+                </Button>
+              )}
+            </div>
+
+            <div className="border-t pt-4">
+              <Label className="mb-2 block">Existing Tags</Label>
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag) => (
+                  <Badge
+                    key={tag.id}
+                    variant="secondary"
+                    className="gap-1 px-3 py-1"
+                    style={{
+                      backgroundColor: tag.color || undefined,
+                      color: tag.color ? "#fff" : undefined,
                     }}
-                  />
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button size="icon" variant="outline">
-                        <Palette className="w-4 h-4" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-3">
-                      <div className="grid grid-cols-4 gap-2">
-                        {tagColors.map((color) => (
-                          <button
-                            key={color}
-                            className={`w-8 h-8 rounded-md border-2 ${
-                              selectedColor === color
-                                ? "border-foreground"
-                                : "border-transparent"
-                            }`}
-                            style={{ backgroundColor: color }}
-                            onClick={() => setSelectedColor(color)}
-                          />
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                  <Button
-                    onClick={editingTag ? handleUpdateTag : handleCreateTag}
                   >
-                    {editingTag ? "Update" : "Create"}
-                  </Button>
-                </div>
-                {editingTag && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setEditingTag(null);
-                      setNewTagName("");
-                    }}
-                  >
-                    Cancel Edit
-                  </Button>
+                    {tag.name}
+                    <button
+                      onClick={() => {
+                        setEditingTag(tag);
+                        setNewTagName(tag.name);
+                        setSelectedColor(tag.color || tagColors[0]);
+                      }}
+                      className="hover:opacity-70"
+                    >
+                      <Edit2 className="w-3 h-3" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTag(tag.id)}
+                      className="hover:opacity-70"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </Badge>
+                ))}
+                {tags.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No tags yet. Create one above!
+                  </p>
                 )}
               </div>
-
-              <div className="border-t pt-4">
-                <Label className="mb-2 block">Existing Tags</Label>
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((tag) => (
-                    <Badge
-                      key={tag.id}
-                      variant="secondary"
-                      className="gap-1 px-3 py-1"
-                      style={{
-                        backgroundColor: tag.color || undefined,
-                        color: tag.color ? "#fff" : undefined,
-                      }}
-                    >
-                      {tag.name}
-                      <button
-                        onClick={() => {
-                          setEditingTag(tag);
-                          setNewTagName(tag.name);
-                          setSelectedColor(tag.color || tagColors[0]);
-                        }}
-                        className="hover:opacity-70"
-                      >
-                        <Edit2 className="w-3 h-3" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteTag(tag.id)}
-                        className="hover:opacity-70"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                  {tags.length === 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      No tags yet. Create one above!
-                    </p>
-                  )}
-                </div>
-              </div>
             </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-      {availableTags.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {availableTags.map((tagName) => {
-            const tag = tags.find((t) => t.name === tagName);
-            const isSelected = selectedTags.includes(tagName);
-            return (
-              <Badge
-                key={tagName}
-                variant={isSelected ? "default" : "outline"}
-                className="cursor-pointer"
-                style={{
-                  backgroundColor:
-                    isSelected && tag?.color ? tag.color : undefined,
-                  color: isSelected && tag?.color ? "#fff" : undefined,
-                }}
-                onClick={() => toggleTag(tagName)}
-              >
-                {tagName}
-              </Badge>
-            );
-          })}
+      {selectedTags.length > 0 && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">Filtering:</span>
+          <div className="flex flex-wrap gap-1">
+            {selectedTags.map((tagName) => {
+              const tag = tags.find((t) => t.name === tagName);
+              return (
+                <Badge
+                  key={tagName}
+                  variant="default"
+                  className="cursor-pointer h-7 px-2 text-xs"
+                  style={{
+                    backgroundColor: tag?.color || undefined,
+                    color: tag?.color ? "#fff" : undefined,
+                  }}
+                  onClick={() => toggleTag(tagName)}
+                >
+                  {tagName}
+                  <X className="w-3 h-3 ml-1" />
+                </Badge>
+              );
+            })}
+          </div>
         </div>
+      )}
+
+      {availableTags.length > 0 && selectedTags.length === 0 && (
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-9 text-xs">
+              Filter by tags ({availableTags.length})
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-3" align="start">
+            <div className="flex flex-wrap gap-2">
+              {availableTags.map((tagName) => {
+                const tag = tags.find((t) => t.name === tagName);
+                return (
+                  <Badge
+                    key={tagName}
+                    variant="outline"
+                    className="cursor-pointer"
+                    style={{
+                      borderColor: tag?.color || undefined,
+                      color: tag?.color || undefined,
+                    }}
+                    onClick={() => toggleTag(tagName)}
+                  >
+                    {tagName}
+                  </Badge>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
       )}
     </div>
   );
