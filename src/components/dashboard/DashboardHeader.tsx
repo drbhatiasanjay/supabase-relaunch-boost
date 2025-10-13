@@ -1,4 +1,4 @@
-import { Bookmark, LogOut, Search, User } from "lucide-react";
+import { Bookmark, LogOut, Search, User, Download, Upload, LayoutGrid, List, AlignJustify } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,6 +17,9 @@ interface DashboardHeaderProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   onAddClick: () => void;
+  onImportExportClick: () => void;
+  viewMode: "grid" | "list" | "compact";
+  onViewModeChange: (mode: "grid" | "list" | "compact") => void;
 }
 
 export const DashboardHeader = ({
@@ -25,6 +28,9 @@ export const DashboardHeader = ({
   searchQuery,
   onSearchChange,
   onAddClick,
+  onImportExportClick,
+  viewMode,
+  onViewModeChange,
 }: DashboardHeaderProps) => {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 backdrop-blur-lg bg-background/80">
@@ -53,13 +59,51 @@ export const DashboardHeader = ({
         </div>
 
         <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-1 border border-border/50 rounded-lg p-1">
+            <Button
+              variant={viewMode === "grid" ? "secondary" : "ghost"}
+              size="icon"
+              onClick={() => onViewModeChange("grid")}
+              className="h-8 w-8"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="icon"
+              onClick={() => onViewModeChange("list")}
+              className="h-8 w-8"
+            >
+              <List className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={viewMode === "compact" ? "secondary" : "ghost"}
+              size="icon"
+              onClick={() => onViewModeChange("compact")}
+              className="h-8 w-8"
+            >
+              <AlignJustify className="w-4 h-4" />
+            </Button>
+          </div>
+
+          <Button
+            onClick={onImportExportClick}
+            variant="outline"
+            size="sm"
+            className="hidden md:flex"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Import/Export
+          </Button>
+
           <Button 
             onClick={onAddClick}
             className="bg-gradient-primary hover:opacity-90 transition-opacity"
             size="sm"
           >
             <Plus className="w-4 h-4 mr-2" />
-            Add Bookmark
+            <span className="hidden sm:inline">Add Bookmark</span>
+            <span className="sm:hidden">Add</span>
           </Button>
 
           <DropdownMenu>
