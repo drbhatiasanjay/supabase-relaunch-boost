@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Bookmark, Sparkles } from "lucide-react";
+import { Bookmark, Sparkles, Phone } from "lucide-react";
 import { z } from "zod";
 
 const signupSchema = z.object({
@@ -16,6 +16,14 @@ const signupSchema = z.object({
     .min(8, "Password must be at least 8 characters")
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[0-9]/, "Password must contain at least one number"),
+  phone_number: z.string()
+    .trim()
+    .regex(/^\+[1-9]\d{1,14}$/, {
+      message: "Phone must be in international format (e.g., +1234567890)"
+    })
+    .max(15, { message: "Phone number too long" })
+    .optional()
+    .or(z.literal("")),
 });
 
 const loginSchema = z.object({
@@ -28,6 +36,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -50,14 +59,25 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      const validated = signupSchema.parse({ email, password });
+      const validated = signupSchema.parse({ 
+        email, 
+        password,
+        phone_number: phoneNumber || ""
+      });
       const redirectUrl = `${window.location.origin}/dashboard`;
+
+      // Only include phone_number in metadata if it was provided
+      const metadata: Record<string, string> = {};
+      if (validated.phone_number && validated.phone_number.trim()) {
+        metadata.phone_number = validated.phone_number;
+      }
 
       const { error } = await supabase.auth.signUp({
         email: validated.email,
         password: validated.password,
         options: {
           emailRedirectTo: redirectUrl,
+          data: metadata,
         },
       });
 
@@ -195,6 +215,24 @@ const Auth = () => {
                   />
                   <p className="text-xs text-muted-foreground">
                     At least 8 characters with one uppercase letter and one number
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-phone" className="flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5" />
+                    WhatsApp Phone Number (Optional)
+                  </Label>
+                  <Input
+                    id="signup-phone"
+                    type="tel"
+                    placeholder="+1234567890"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    disabled={loading}
+                    maxLength={15}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Add to enable WhatsApp chat features via n8n
                   </p>
                 </div>
                 <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-opacity" disabled={loading}>
