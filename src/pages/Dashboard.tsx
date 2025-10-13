@@ -55,6 +55,7 @@ const Dashboard = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [folders, setFolders] = useState<any[]>([]);
   const [prefillData, setPrefillData] = useState<any>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -278,16 +279,21 @@ const Dashboard = () => {
         onImportExportClick={() => setIsImportExportOpen(true)}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
+        onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        isSidebarOpen={isSidebarOpen}
       />
 
       <div className="flex">
-        <FolderSidebar
-          selectedFolderId={selectedFolderId}
-          onFolderSelect={setSelectedFolderId}
-          onRefresh={fetchBookmarks}
-        />
+        <div className={`transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-0'}`}>
+          <FolderSidebar
+            selectedFolderId={selectedFolderId}
+            onFolderSelect={setSelectedFolderId}
+            onRefresh={fetchBookmarks}
+            isOpen={isSidebarOpen}
+          />
+        </div>
 
-        <main className="flex-1 px-4 py-8 max-w-7xl mx-auto w-full">
+        <main className={`flex-1 px-4 py-8 mx-auto w-full transition-all duration-300 ${isSidebarOpen ? 'max-w-6xl' : 'max-w-7xl'}`}>
           <DashboardStats
             total={stats.total}
             reading={stats.reading}

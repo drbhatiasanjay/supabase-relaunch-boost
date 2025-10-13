@@ -34,12 +34,14 @@ interface FolderSidebarProps {
   selectedFolderId: string | null;
   onFolderSelect: (folderId: string | null) => void;
   onRefresh: () => void;
+  isOpen?: boolean;
 }
 
 export const FolderSidebar = ({
   selectedFolderId,
   onFolderSelect,
   onRefresh,
+  isOpen = true,
 }: FolderSidebarProps) => {
   const [folders, setFolders] = useState<FolderType[]>([]);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
@@ -212,7 +214,7 @@ export const FolderSidebar = ({
   };
 
   return (
-    <div className="w-64 border-r bg-card p-4 space-y-4">
+    <div className={`h-full border-r bg-card transition-all duration-300 overflow-hidden ${isOpen ? 'p-4 opacity-100' : 'p-0 opacity-0 w-0'} space-y-4`}>
       <div className="flex items-center justify-between">
         <h3 className="font-semibold text-sm">Folders</h3>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

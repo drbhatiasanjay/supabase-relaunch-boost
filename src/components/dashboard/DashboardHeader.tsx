@@ -1,4 +1,4 @@
-import { Bookmark, LogOut, Search, User, Download, Upload, LayoutGrid, List, AlignJustify } from "lucide-react";
+import { Bookmark, LogOut, Search, User, Download, Upload, LayoutGrid, List, AlignJustify, PanelLeftClose, PanelLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,6 +20,8 @@ interface DashboardHeaderProps {
   onImportExportClick: () => void;
   viewMode: "grid" | "list" | "compact";
   onViewModeChange: (mode: "grid" | "list" | "compact") => void;
+  onToggleSidebar: () => void;
+  isSidebarOpen: boolean;
 }
 
 export const DashboardHeader = ({
@@ -31,11 +33,21 @@ export const DashboardHeader = ({
   onImportExportClick,
   viewMode,
   onViewModeChange,
+  onToggleSidebar,
+  isSidebarOpen,
 }: DashboardHeaderProps) => {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 backdrop-blur-lg bg-background/80">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between max-w-7xl">
         <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleSidebar}
+            className="h-9 w-9"
+          >
+            {isSidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeft className="w-4 h-4" />}
+          </Button>
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-primary blur-lg opacity-50" />
             <div className="relative bg-gradient-primary p-2 rounded-xl">
