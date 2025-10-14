@@ -98,8 +98,9 @@ serve(async (req) => {
         reply = "🤔 I can help you with:\n\n📚 *reading list* - Show your reading list\n🔗 *add [url]* - Add a bookmark\n🔍 *search [text]* - Search bookmarks\n😴 *I'm bored* - Get a random suggestion\n💬 *Ask me anything* - Chat about your bookmarks!";
     }
 
-    const response = { reply, text: reply, message: reply };
-    console.log('Sending response:', response);
+    // Return only 'reply' field for n8n/Telegram compatibility
+    const response = { reply };
+    console.log('Sending response with reply length:', reply.length);
     return new Response(
       JSON.stringify(response),
       { 
