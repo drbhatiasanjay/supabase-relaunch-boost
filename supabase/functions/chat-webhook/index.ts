@@ -13,7 +13,7 @@ interface ChatRequest {
 }
 
 interface Intent {
-  type: 'reading_list' | 'add_link' | 'search' | 'chat' | 'unknown';
+  type: 'reading_list' | 'add_link' | 'search' | 'chat' | 'bored' | 'unknown';
   query?: string;
   url?: string;
   tags?: string[];
@@ -88,11 +88,14 @@ serve(async (req) => {
       case 'search':
         reply = await searchBookmarks(supabase, userId, intent.query!);
         break;
+      case 'bored':
+        reply = await suggestBookmark(supabase, userId);
+        break;
       case 'chat':
         reply = await chatAboutBookmarks(supabase, userId, message);
         break;
       default:
-        reply = "🤔 I can help you with:\n\n📚 *reading list* - Show your reading list\n🔗 *add [url]* - Add a bookmark\n🔍 *search [text]* - Search bookmarks\n💬 *Ask me anything* - Chat about your bookmarks!";
+        reply = "🤔 I can help you with:\n\n📚 *reading list* - Show your reading list\n🔗 *add [url]* - Add a bookmark\n🔍 *search [text]* - Search bookmarks\n😴 *I'm bored* - Get a random suggestion\n💬 *Ask me anything* - Chat about your bookmarks!";
     }
 
     const response = { reply, text: reply, message: reply };
@@ -121,6 +124,11 @@ serve(async (req) => {
 
 function parseIntent(message: string): Intent {
   const lowerMessage = message.toLowerCase().trim();
+
+  // Bored intent - check first before other intents
+  if (lowerMessage.includes('bored') || lowerMessage.includes('bore')) {
+    return { type: 'bored' };
+  }
 
   // Reading list intent
   if (lowerMessage.includes('reading list') || lowerMessage.includes('show reading') || lowerMessage === 'reading') {
@@ -253,6 +261,42 @@ async function searchBookmarks(supabase: any, userId: string, query: string): Pr
   });
 
   return reply.trim();
+}
+
+async function suggestBookmark(supabase: any, userId: string): Promise<string> {
+  try {
+    // Get a random bookmark from reading list first, then any bookmark
+    const { data: readingBookmarks } = await supabase
+      .from('bookmarks')
+      .select('title, url, description, tags')
+      .eq('user_id', userId)
+      .eq('reading', true)
+      .limit(10);
+
+    const { data: allBookmarks } = await supabase
+      .from('bookmarks')
+      .select('title, url, description, tags')
+      .eq('user_id', userId)
+      .limit(20);
+
+    const bookmarks = readingBookmarks?.length > 0 ? readingBookmarks : allBookmarks;
+
+    if (!bookmarks || bookmarks.length === 0) {
+      return "📚 You don't have any bookmarks yet!\n\nAdd some links to get personalized suggestions when you're bored.";
+    }
+
+    // Pick a random bookmark
+    const randomIndex = Math.floor(Math.random() * bookmarks.length);
+    const bookmark = bookmarks[randomIndex];
+    
+    const tags = bookmark.tags?.slice(0, 3).map((t: string) => `#${t}`).join(' ') || '';
+    
+    return `✨ *Here's something for you:*\n\n${bookmark.title}\n${bookmark.url}\n${tags}\n\n${bookmark.description ? bookmark.description : 'Enjoy! 🎯'}`;
+    
+  } catch (error) {
+    console.error('Error suggesting bookmark:', error);
+    return "❌ Could not fetch a suggestion";
+  }
 }
 
 async function chatAboutBookmarks(supabase: any, userId: string, message: string): Promise<string> {
