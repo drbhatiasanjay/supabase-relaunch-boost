@@ -144,20 +144,38 @@ function parseIntent(message: string): Intent {
     return { type: 'add_link', url, query: description };
   }
 
-  // Search intent
-  if (lowerMessage.startsWith('search ') || lowerMessage.startsWith('find ')) {
+  // Search intent - only for explicit "search" or "find" commands with content
+  if ((lowerMessage.startsWith('search ') || lowerMessage.startsWith('find ')) && lowerMessage.length > 7) {
     const query = message.replace(/^(search|find)\s+/i, '').trim();
     return { type: 'search', query };
   }
 
-  // Tag search
-  if (lowerMessage.startsWith('#')) {
-    return { type: 'search', query: lowerMessage };
-  }
+  // Expanded chat keywords for better conversational detection
+  const chatKeywords = [
+    '?', 'what', 'why', 'how', 'when', 'where', 'who', 'which',
+    'recommend', 'suggest', 'tell me', 'show me', 'do i', 'did i', 'can you',
+    'summarize', 'summarise', 'summerise', // Common misspellings
+    'learn', 'topics', 'about', 'framework', 'articles', 'resources',
+    'should i', 'help', 'any', 'have i', 'my bookmarks', 'my collection'
+  ];
 
   // If it's a question or conversational message, treat as chat
-  const chatKeywords = ['what', 'why', 'how', 'when', 'where', 'who', 'recommend', 'suggest', 'tell me', 'show me', '?'];
   if (chatKeywords.some(keyword => lowerMessage.includes(keyword))) {
+    return { type: 'chat' };
+  }
+
+  // Single word technical terms should go to chat (not search)
+  const techTerms = [
+    'react', 'vue', 'angular', 'node', 'python', 'java', 'ruby', 'php', 'swift',
+    'css', 'html', 'javascript', 'typescript', 'nextjs', 'tailwind', 'prisma'
+  ];
+  const wordCount = lowerMessage.split(/\s+/).length;
+  if (wordCount === 1 && techTerms.includes(lowerMessage)) {
+    return { type: 'chat' };
+  }
+
+  // For multi-word messages that aren't commands, default to chat
+  if (wordCount > 2 && !lowerMessage.startsWith('#')) {
     return { type: 'chat' };
   }
 
