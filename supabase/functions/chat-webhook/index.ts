@@ -68,6 +68,7 @@ serve(async (req) => {
     }
 
     const userId = profile.user_id;
+    console.log('Mapped phone to user:', userId);
 
     // 2. Parse intent
     const intent = parseIntent(message);
@@ -90,8 +91,10 @@ serve(async (req) => {
         reply = "🤔 I can help you with:\n\n📚 *reading list* - Show your reading list\n🔗 *add [url]* - Add a bookmark\n🔍 *search [text]* - Search bookmarks";
     }
 
+    const response = { reply };
+    console.log('Sending response:', response);
     return new Response(
-      JSON.stringify({ reply }),
+      JSON.stringify(response),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 
@@ -100,13 +103,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error:', error);
+    const response = { reply: "Sorry, I encountered an error processing your request." };
+    console.log('Sending response:', response);
     return new Response(
-      JSON.stringify({ 
-        reply: "❌ Sorry, something went wrong. Please try again." 
-      }),
+      JSON.stringify(response),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
+        status: 200 // Return 200 so n8n can deliver the message
       }
     );
   }
@@ -162,7 +165,10 @@ async function getReadingList(supabase: any, userId: string): Promise<string> {
     return "❌ Error fetching reading list";
   }
 
+  console.log(`Reading list query user=${userId} count=${bookmarks?.length ?? 0}`);
+
   if (!bookmarks || bookmarks.length === 0) {
+    console.log('Reading list is empty for user:', userId);
     return "📚 Your reading list is empty.\n\nMark some bookmarks for reading from the dashboard!";
   }
 
