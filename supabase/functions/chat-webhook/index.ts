@@ -91,7 +91,7 @@ serve(async (req) => {
         reply = "🤔 I can help you with:\n\n📚 *reading list* - Show your reading list\n🔗 *add [url]* - Add a bookmark\n🔍 *search [text]* - Search bookmarks";
     }
 
-    const response = { reply };
+    const response = { reply, text: reply, message: reply };
     console.log('Sending response:', response);
     return new Response(
       JSON.stringify(response),
