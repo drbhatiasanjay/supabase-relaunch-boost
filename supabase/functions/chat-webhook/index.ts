@@ -163,10 +163,10 @@ async function getReadingList(supabase: any, userId: string): Promise<string> {
   }
 
   if (!bookmarks || bookmarks.length === 0) {
-    return "📚 Your reading list is empty.\n\nAdd bookmarks to your reading list from the dashboard!";
+    return "📚 Your reading list is empty.\n\nMark some bookmarks for reading from the dashboard!";
   }
 
-  let reply = `📚 *Reading List* (${bookmarks.length})\n\n`;
+  let reply = `📚 *Reading List* (${bookmarks.length} bookmark${bookmarks.length > 1 ? 's' : ''})\n\n`;
   bookmarks.forEach((b: any, i: number) => {
     const tags = b.tags?.slice(0, 2).map((t: string) => `#${t}`).join(' ') || '';
     reply += `${i + 1}. ${b.title}\n${b.url}\n${tags}\n\n`;
