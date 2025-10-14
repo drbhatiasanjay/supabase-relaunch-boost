@@ -13,7 +13,7 @@ interface ChatRequest {
 }
 
 interface Intent {
-  type: 'reading_list' | 'add_link' | 'search' | 'unknown';
+  type: 'reading_list' | 'add_link' | 'search' | 'chat' | 'unknown';
   query?: string;
   url?: string;
   tags?: string[];
@@ -88,8 +88,11 @@ serve(async (req) => {
       case 'search':
         reply = await searchBookmarks(supabase, userId, intent.query!);
         break;
+      case 'chat':
+        reply = await chatAboutBookmarks(supabase, userId, message);
+        break;
       default:
-        reply = "🤔 I can help you with:\n\n📚 *reading list* - Show your reading list\n🔗 *add [url]* - Add a bookmark\n🔍 *search [text]* - Search bookmarks";
+        reply = "🤔 I can help you with:\n\n📚 *reading list* - Show your reading list\n🔗 *add [url]* - Add a bookmark\n🔍 *search [text]* - Search bookmarks\n💬 *Ask me anything* - Chat about your bookmarks!";
     }
 
     const response = { reply, text: reply, message: reply };
@@ -142,6 +145,12 @@ function parseIntent(message: string): Intent {
   // Tag search
   if (lowerMessage.startsWith('#')) {
     return { type: 'search', query: lowerMessage };
+  }
+
+  // If it's a question or conversational message, treat as chat
+  const chatKeywords = ['what', 'why', 'how', 'when', 'where', 'who', 'recommend', 'suggest', 'tell me', 'show me', '?'];
+  if (chatKeywords.some(keyword => lowerMessage.includes(keyword))) {
+    return { type: 'chat' };
   }
 
   return { type: 'unknown' };
@@ -244,4 +253,84 @@ async function searchBookmarks(supabase: any, userId: string, query: string): Pr
   });
 
   return reply.trim();
+}
+
+async function chatAboutBookmarks(supabase: any, userId: string, message: string): Promise<string> {
+  try {
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      console.error('LOVABLE_API_KEY not set');
+      return "❌ AI chat is not configured. Please contact support.";
+    }
+
+    // Fetch user's bookmarks for context
+    const { data: bookmarks, error } = await supabase
+      .from('bookmarks')
+      .select('title, url, description, tags, category, reading')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error('Error fetching bookmarks for chat:', error);
+      return "❌ Could not retrieve your bookmarks";
+    }
+
+    // Build context from bookmarks
+    const bookmarksContext = bookmarks?.map((b: any, i: number) => 
+      `${i + 1}. ${b.title}${b.description ? ' - ' + b.description : ''}\n   URL: ${b.url}\n   Tags: ${b.tags?.join(', ') || 'none'}\n   ${b.reading ? '📚 Reading list' : ''}`
+    ).join('\n\n') || 'No bookmarks saved yet.';
+
+    const systemPrompt = `You are a helpful assistant for a bookmark manager. The user can save bookmarks and you help them find, organize, and discover insights from their saved links.
+
+User's bookmarks (most recent first):
+${bookmarksContext}
+
+Provide helpful, concise answers about their bookmarks. Be conversational and friendly. Use emojis where appropriate.`;
+
+    // Call Lovable AI
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: message }
+        ],
+        max_tokens: 500,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('AI API error:', response.status, errorText);
+      
+      if (response.status === 429) {
+        return "⏳ AI is temporarily busy. Please try again in a moment.";
+      }
+      if (response.status === 402) {
+        return "💳 AI credits depleted. Please contact support.";
+      }
+      
+      return "❌ AI chat temporarily unavailable";
+    }
+
+    const data = await response.json();
+    const aiReply = data.choices?.[0]?.message?.content;
+
+    if (!aiReply) {
+      console.error('No AI reply in response:', data);
+      return "❌ Could not generate a response";
+    }
+
+    return `🤖 *AI Assistant*\n\n${aiReply}`;
+
+  } catch (error) {
+    console.error('Error in chatAboutBookmarks:', error);
+    return "❌ Error communicating with AI";
+  }
 }
