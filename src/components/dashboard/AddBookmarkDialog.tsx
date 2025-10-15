@@ -214,13 +214,13 @@ export const AddBookmarkDialog = ({
               <Button
                 type="button"
                 variant="ghost"
-                size="icon"
-                className={`h-8 w-8 ${autoFetch ? 'text-primary' : 'text-muted-foreground'}`}
+                className={`flex flex-col items-center gap-0.5 h-auto py-1 px-2 ${autoFetch ? 'text-primary' : 'text-muted-foreground'}`}
                 onClick={() => setAutoFetch(!autoFetch)}
                 disabled={loading || fetching}
                 title={autoFetch ? "Auto-fetch enabled" : "Auto-fetch disabled"}
               >
-                <Zap className="h-4 w-4" />
+                <Zap className={`h-5 w-5 ${autoFetch ? 'fill-primary' : ''}`} />
+                <span className="text-[10px] font-medium">{autoFetch ? 'On' : 'Off'}</span>
               </Button>
             </div>
           </div>
