@@ -384,8 +384,7 @@ async function addBookmark(supabase: any, userId: string, url: string, descripti
   try {
     // Extract title from URL
     const urlObj = new URL(url);
-    const title = description || urlObj.hostname;
-
+    
     // Check if bookmark already exists
     const { data: existing } = await supabase
       .from('bookmarks')
@@ -398,13 +397,35 @@ async function addBookmark(supabase: any, userId: string, url: string, descripti
       return `📌 *You already have this bookmark!*\n\n${existing.title}\n${existing.url}`;
     }
 
+    // Fetch metadata using Perplexity API
+    let metadata = { title: '', description: '', tags: [] };
+    try {
+      const { data: metadataResult, error: metadataError } = await supabase.functions.invoke('fetch-bookmark-metadata', {
+        body: { url }
+      });
+
+      if (!metadataError && metadataResult) {
+        metadata = metadataResult;
+        console.log('Fetched metadata:', metadata);
+      }
+    } catch (metadataErr) {
+      console.error('Error fetching metadata:', metadataErr);
+      // Continue with basic data if metadata fetch fails
+    }
+
+    // Use fetched metadata or fallback to basic values
+    const title = metadata.title || description || urlObj.hostname;
+    const finalDescription = metadata.description || description || null;
+    const tags = metadata.tags || [];
+
     const { error } = await supabase
       .from('bookmarks')
       .insert({
         user_id: userId,
         url: url,
         title: title,
-        description: description || null,
+        description: finalDescription,
+        tags: tags,
         reading: false
       });
 
@@ -413,7 +434,8 @@ async function addBookmark(supabase: any, userId: string, url: string, descripti
       return "❌ Failed to add bookmark";
     }
 
-    return `✅ *Bookmark added!*\n\n${title}\n${url}`;
+    const tagString = tags.length > 0 ? '\n🏷️ ' + tags.slice(0, 3).map((t: string) => `#${t}`).join(' ') : '';
+    return `✅ *Bookmark added!*\n\n${title}\n${url}${tagString}`;
   } catch (error) {
     console.error('Invalid URL:', error);
     return "❌ Invalid URL. Please provide a valid link.";
