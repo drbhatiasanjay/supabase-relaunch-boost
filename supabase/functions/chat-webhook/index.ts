@@ -8,9 +8,30 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+// Basic per-user rate limiting (in-memory)
+// Window: 60 seconds, Max: 60 requests
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 60;
+const rlStore = new Map<string, { count: number; resetAt: number }>();
+
+function checkRateLimit(key: string) {
+  const now = Date.now();
+  const entry = rlStore.get(key);
+  if (!entry || now > entry.resetAt) {
+    rlStore.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, remaining: RATE_LIMIT_MAX - 1, resetAt: now + RATE_LIMIT_WINDOW_MS };
+  }
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return { allowed: false, remaining: 0, resetAt: entry.resetAt };
+  }
+  entry.count += 1;
+  return { allowed: true, remaining: RATE_LIMIT_MAX - entry.count, resetAt: entry.resetAt };
+}
+
 interface ChatRequest {
-  phone: string;
   message: string;
+  phone?: string;
+  telegram_id?: string;
 }
 
 interface Intent {
@@ -22,8 +43,9 @@ interface Intent {
 
 // Input validation schema
 const chatRequestSchema = z.object({
-  phone: z.string().trim().min(1, "Phone/ID required").max(100, "Phone/ID too long").regex(/^[+\w\d-]+$/, "Invalid phone/ID format"),
-  message: z.string().trim().min(1, "Message required").max(5000, "Message too long")
+  message: z.string().trim().min(1, "Message required").max(1000, "Message too long"),
+  phone: z.string().trim().max(32).optional(),
+  telegram_id: z.string().trim().max(64).optional(),
 });
 
 serve(async (req) => {
@@ -32,9 +54,15 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  global: {
+    headers: {
+      Authorization: req.headers.get('Authorization') ?? '',
+    },
+  },
+});
 
     // Parse and validate input
     const rawBody = await req.json();
@@ -53,46 +81,28 @@ serve(async (req) => {
       );
     }
 
-    const { phone, message } = validationResult.data;
-    console.log('Chat request received');
+const { message } = validationResult.data;
+console.log('Chat request received');
 
-    // 1. Map phone/telegram_id to user
-    // First try telegram_id, then phone_number
-    let profile = null;
-    let profileError = null;
+// Authenticate via JWT and use user-scoped access (no phone/telegram lookup)
+const { data: { user }, error: userError } = await supabase.auth.getUser();
+if (userError || !user) {
+  return new Response(
+    JSON.stringify({ reply: "Unauthorized" }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+  );
+}
+const userId = user.id;
+console.log('User authenticated via JWT');
 
-    // Try telegram_id first (for Telegram integration)
-    const { data: telegramProfile, error: telegramError } = await supabase
-      .from('profiles')
-      .select('user_id')
-      .eq('telegram_id', phone)
-      .maybeSingle();
-
-    if (telegramProfile) {
-      profile = telegramProfile;
-    } else {
-      // Fallback to phone_number (for WhatsApp or SMS)
-      const { data: phoneProfile, error: phoneError } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('phone_number', phone)
-        .maybeSingle();
-      
-      profile = phoneProfile;
-      profileError = phoneError;
-    }
-
-    if (!profile) {
-      return new Response(
-        JSON.stringify({ 
-          reply: "📱 Not registered. Please add your Telegram ID or phone number in your profile settings.\n\nYour Telegram ID: " + phone 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const userId = profile.user_id;
-    console.log('User authenticated successfully');
+// Rate limiting per user
+const rl = checkRateLimit(userId);
+if (!rl.allowed) {
+  return new Response(
+    JSON.stringify({ reply: "Too many requests. Please slow down." }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
+  );
+}
 
     // 2. Parse intent
     const intent = parseIntent(message);
