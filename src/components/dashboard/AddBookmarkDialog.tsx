@@ -197,7 +197,7 @@ export const AddBookmarkDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="w-[92vw] sm:max-w-[520px] max-h-[85vh] p-4 md:p-5">
         <DialogHeader>
           <DialogTitle>Add New Bookmark</DialogTitle>
           <DialogDescription>
@@ -205,7 +205,8 @@ export const AddBookmarkDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-3">
+        <div className="max-h-[70vh] overflow-y-auto pr-1">
+          <form onSubmit={handleSubmit} className="space-y-2">
           <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
             <div>
               <Label htmlFor="auto-fetch" className="text-sm font-medium cursor-pointer">
@@ -233,6 +234,7 @@ export const AddBookmarkDialog = ({
               onChange={(e) => handleUrlChange(e.target.value)}
               required
               disabled={loading || fetching}
+              className="h-9"
             />
             {fetching && (
               <p className="text-xs text-muted-foreground">Fetching metadata...</p>
@@ -248,6 +250,7 @@ export const AddBookmarkDialog = ({
               onChange={(e) => setTitle(e.target.value)}
               required
               disabled={loading}
+              className="h-9"
             />
           </div>
 
@@ -275,6 +278,7 @@ export const AddBookmarkDialog = ({
               onKeyDown={handleAddTag}
               disabled={loading}
               list="tag-suggestions"
+              className="h-9"
             />
             <datalist id="tag-suggestions">
               {availableTags.map((tag) => (
@@ -319,19 +323,20 @@ export const AddBookmarkDialog = ({
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={loading}
-              className="flex-1"
+              className="flex-1 h-9"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading || fetching}
-              className="flex-1 bg-gradient-primary hover:opacity-90 transition-opacity"
+              className="flex-1 h-9 bg-gradient-primary hover:opacity-90 transition-opacity"
             >
               {loading ? "Saving..." : fetching ? "Fetching..." : "Save Bookmark"}
             </Button>
           </div>
         </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
