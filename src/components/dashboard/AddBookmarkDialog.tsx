@@ -155,8 +155,8 @@ export const AddBookmarkDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="space-y-1.5">
             <Label htmlFor="url">URL *</Label>
             <Input
               id="url"
@@ -169,7 +169,7 @@ export const AddBookmarkDialog = ({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="title">Title *</Label>
             <Input
               id="title"
@@ -181,27 +181,25 @@ export const AddBookmarkDialog = ({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              placeholder="Add notes about this bookmark..."
+              placeholder="Add notes..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={loading}
-              rows={3}
+              rows={2}
               maxLength={500}
+              className="resize-none"
             />
-            <p className="text-xs text-muted-foreground">
-              {description.length}/500 characters
-            </p>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="tags">Tags</Label>
             <Input
               id="tags"
-              placeholder="Type a tag and press Enter"
+              placeholder="Type and press Enter"
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleAddTag}
@@ -214,9 +212,9 @@ export const AddBookmarkDialog = ({
               ))}
             </datalist>
             {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
                 {tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="gap-1">
+                  <Badge key={tag} variant="secondary" className="gap-1 text-xs">
                     {tag}
                     <button
                       type="button"
@@ -229,22 +227,13 @@ export const AddBookmarkDialog = ({
                 ))}
               </div>
             )}
-            {availableTags.length > 0 && tags.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                Suggestions: {availableTags.slice(0, 5).join(", ")}
-                {availableTags.length > 5 ? "..." : ""}
-              </p>
-            )}
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-lg bg-muted">
-            <div className="space-y-0.5">
-              <Label htmlFor="reading" className="text-base cursor-pointer">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
+            <div>
+              <Label htmlFor="reading" className="text-sm cursor-pointer">
                 Add to Reading List
               </Label>
-              <p className="text-sm text-muted-foreground">
-                Mark this for reading later
-              </p>
             </div>
             <Switch
               id="reading"
@@ -254,7 +243,7 @@ export const AddBookmarkDialog = ({
             />
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
