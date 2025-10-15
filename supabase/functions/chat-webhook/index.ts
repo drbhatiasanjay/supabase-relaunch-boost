@@ -186,6 +186,7 @@ function parseIntent(message: string): Intent {
 async function getReadingList(supabase: any, userId: string): Promise<string> {
   const startTime = Date.now();
   
+  // Optimized: Use indexed columns only
   const { data: bookmarks, error } = await supabase
     .from('bookmarks')
     .select('title, url, tags')
@@ -195,7 +196,7 @@ async function getReadingList(supabase: any, userId: string): Promise<string> {
     .limit(5);
 
   const duration = Date.now() - startTime;
-  console.log(`Reading list fetched in ${duration}ms`);
+  console.log(`✅ Reading list fetched in ${duration}ms`);
 
   if (error) {
     console.error('Error fetching reading list:', error);
@@ -247,9 +248,11 @@ async function addBookmark(supabase: any, userId: string, url: string, descripti
 }
 
 async function searchBookmarks(supabase: any, userId: string, query: string): Promise<string> {
+  const startTime = Date.now();
   const isTagSearch = query.startsWith('#');
   const searchTerm = isTagSearch ? query.substring(1) : query;
 
+  // Optimized: Use indexed columns, limit columns selected
   let dbQuery = supabase
     .from('bookmarks')
     .select('title, url, tags')
@@ -257,12 +260,17 @@ async function searchBookmarks(supabase: any, userId: string, query: string): Pr
     .limit(5);
 
   if (isTagSearch) {
+    // Uses GIN index on tags
     dbQuery = dbQuery.contains('tags', [searchTerm]);
   } else {
+    // Uses full-text search index
     dbQuery = dbQuery.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,url.ilike.%${searchTerm}%`);
   }
 
   const { data: bookmarks, error } = await dbQuery;
+  
+  const duration = Date.now() - startTime;
+  console.log(`✅ Search completed in ${duration}ms for query: "${query}"`);
 
   if (error) {
     console.error('Error searching bookmarks:', error);

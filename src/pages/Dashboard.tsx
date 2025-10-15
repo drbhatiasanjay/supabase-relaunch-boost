@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
+import { useBookmarks } from "@/hooks/useBookmarks";
+import { useFolders } from "@/hooks/useFolders";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { DashboardStats } from "@/components/dashboard/DashboardStats";
 import { BookmarkGrid } from "@/components/dashboard/BookmarkGrid";
@@ -41,8 +43,6 @@ const Dashboard = () => {
   const [searchParams] = useSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState<"all" | "reading">("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -53,9 +53,13 @@ const Dashboard = () => {
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [selectedBookmarks, setSelectedBookmarks] = useState<Set<string>>(new Set());
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [folders, setFolders] = useState<any[]>([]);
   const [prefillData, setPrefillData] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  // Use optimized hooks with React Query caching
+  const { bookmarks, isLoading, deleteBookmark, toggleReading, bulkDelete, bulkMoveToFolder, refetch } = 
+    useBookmarks(user?.id, selectedFolderId);
+  const { data: folders = [] } = useFolders(user?.id);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -80,13 +84,6 @@ const Dashboard = () => {
   }, [navigate]);
 
   useEffect(() => {
-    if (user) {
-      fetchBookmarks();
-      fetchFolders();
-    }
-  }, [user, selectedFolderId]);
-
-  useEffect(() => {
     // Handle bookmarklet prefill
     const add = searchParams.get("add");
     const url = searchParams.get("url");
@@ -99,41 +96,6 @@ const Dashboard = () => {
     }
   }, [searchParams]);
 
-  const fetchBookmarks = async () => {
-    try {
-      let query = supabase
-        .from("bookmarks")
-        .select("*");
-
-      if (selectedFolderId) {
-        query = query.eq("folder_id", selectedFolderId);
-      }
-
-      const { data, error } = await query.order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setBookmarks(data || []);
-    } catch (error: any) {
-      toast.error("Failed to fetch bookmarks");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchFolders = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("folders")
-        .select("id, name")
-        .order("name");
-
-      if (error) throw error;
-      setFolders(data || []);
-    } catch (error: any) {
-      console.error("Failed to fetch folders");
-    }
-  };
-
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -145,78 +107,23 @@ const Dashboard = () => {
   };
 
   const handleDeleteBookmark = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from("bookmarks")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-
-      setBookmarks(bookmarks.filter(b => b.id !== id));
-      toast.success("Bookmark deleted", {
-        description: "The bookmark has been removed from your collection.",
-      });
-    } catch (error: any) {
-      toast.error("Failed to delete bookmark");
-    }
+    deleteBookmark.mutate(id);
   };
 
   const handleToggleReading = async (id: string, currentStatus: boolean) => {
-    try {
-      const { error } = await supabase
-        .from("bookmarks")
-        .update({ reading: !currentStatus })
-        .eq("id", id);
-
-      if (error) throw error;
-
-      setBookmarks(bookmarks.map(b => 
-        b.id === id ? { ...b, reading: !currentStatus } : b
-      ));
-
-      toast.success(
-        !currentStatus ? "Added to reading list" : "Removed from reading list"
-      );
-    } catch (error: any) {
-      toast.error("Failed to update bookmark");
-    }
+    toggleReading.mutate({ id, currentStatus });
   };
 
   const handleBulkDelete = async () => {
-    try {
-      const ids = Array.from(selectedBookmarks);
-      const { error } = await supabase
-        .from("bookmarks")
-        .delete()
-        .in("id", ids);
-
-      if (error) throw error;
-
-      setBookmarks(bookmarks.filter(b => !selectedBookmarks.has(b.id)));
-      setSelectedBookmarks(new Set());
-      toast.success(`Deleted ${ids.length} bookmark${ids.length > 1 ? "s" : ""}`);
-    } catch (error: any) {
-      toast.error("Failed to delete bookmarks");
-    }
+    const ids = Array.from(selectedBookmarks);
+    bulkDelete.mutate(ids);
+    setSelectedBookmarks(new Set());
   };
 
   const handleBulkMoveToFolder = async (folderId: string) => {
-    try {
-      const ids = Array.from(selectedBookmarks);
-      const { error } = await supabase
-        .from("bookmarks")
-        .update({ folder_id: folderId === "null" ? null : folderId })
-        .in("id", ids);
-
-      if (error) throw error;
-
-      toast.success(`Moved ${ids.length} bookmark${ids.length > 1 ? "s" : ""}`);
-      setSelectedBookmarks(new Set());
-      fetchBookmarks();
-    } catch (error: any) {
-      toast.error("Failed to move bookmarks");
-    }
+    const ids = Array.from(selectedBookmarks);
+    bulkMoveToFolder.mutate({ ids, folderId });
+    setSelectedBookmarks(new Set());
   };
 
   const toggleBookmarkSelection = (id: string) => {
@@ -229,7 +136,8 @@ const Dashboard = () => {
     setSelectedBookmarks(newSelection);
   };
 
-  const filteredBookmarks = bookmarks
+  // Memoize expensive computations
+  const filteredBookmarks = useMemo(() => bookmarks
     .filter(bookmark => {
       const matchesSearch = 
         bookmark.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -253,21 +161,28 @@ const Dashboard = () => {
         return (a.category || "").localeCompare(b.category || "");
       }
       return 0;
-    });
+    }), [bookmarks, searchQuery, selectedFilter, categoryFilter, selectedTags, sortBy]);
 
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
   
-  const stats = {
+  const stats = useMemo(() => ({
     total: bookmarks.length,
     reading: bookmarks.filter(b => b.reading).length,
     tags: new Set(bookmarks.flatMap(b => b.tags)).size,
     categories: new Set(bookmarks.map(b => b.category).filter(Boolean)).size,
     thisWeek: bookmarks.filter(b => new Date(b.created_at) >= weekAgo).length,
-  };
+  }), [bookmarks]);
 
-  const categories = ["all", ...new Set(bookmarks.map(b => b.category).filter(Boolean))] as string[];
-  const allTags = Array.from(new Set(bookmarks.flatMap(b => b.tags)));
+  const categories = useMemo(() => 
+    ["all", ...new Set(bookmarks.map(b => b.category).filter(Boolean))] as string[], 
+    [bookmarks]
+  );
+  
+  const allTags = useMemo(() => 
+    Array.from(new Set(bookmarks.flatMap(b => b.tags))),
+    [bookmarks]
+  );
 
   if (!user) {
     return null;
@@ -293,7 +208,7 @@ const Dashboard = () => {
           <FolderSidebar
             selectedFolderId={selectedFolderId}
             onFolderSelect={setSelectedFolderId}
-            onRefresh={fetchBookmarks}
+            onRefresh={refetch}
             isOpen={isSidebarOpen}
           />
         </div>
@@ -368,16 +283,16 @@ const Dashboard = () => {
           {viewMode === "grid" && (
             <BookmarkGrid
               bookmarks={filteredBookmarks}
-              loading={loading}
+              loading={isLoading}
               onDelete={handleDeleteBookmark}
               onToggleReading={handleToggleReading}
-              onRefresh={fetchBookmarks}
+              onRefresh={refetch}
               selectedBookmarks={selectedBookmarks}
               onToggleSelection={toggleBookmarkSelection}
             />
           )}
           
-          {viewMode === "list" && !loading && (
+          {viewMode === "list" && !isLoading && (
             <BookmarkListView
               bookmarks={filteredBookmarks}
               onDelete={handleDeleteBookmark}
@@ -385,7 +300,7 @@ const Dashboard = () => {
             />
           )}
           
-          {viewMode === "compact" && !loading && (
+          {viewMode === "compact" && !isLoading && (
             <BookmarkCompactView
               bookmarks={filteredBookmarks}
               onDelete={handleDeleteBookmark}
@@ -393,7 +308,7 @@ const Dashboard = () => {
             />
           )}
 
-          {loading && viewMode !== "grid" && (
+          {isLoading && viewMode !== "grid" && (
             <div className="flex items-center justify-center py-20">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
@@ -414,7 +329,7 @@ const Dashboard = () => {
       <AddBookmarkDialog
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
-        onSuccess={fetchBookmarks}
+        onSuccess={refetch}
         prefillData={prefillData}
         folderId={selectedFolderId}
       />
@@ -423,7 +338,7 @@ const Dashboard = () => {
         open={isImportExportOpen}
         onOpenChange={setIsImportExportOpen}
         bookmarks={bookmarks}
-        onImportSuccess={fetchBookmarks}
+        onImportSuccess={refetch}
       />
     </div>
   );
