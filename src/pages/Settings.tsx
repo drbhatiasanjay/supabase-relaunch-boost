@@ -228,7 +228,7 @@ const Settings = () => {
 
               <Button
                 onClick={handleSave}
-                disabled={loading || (!phoneNumber && !telegramId)}
+                disabled={loading || !telegramId}
                 className="w-full gap-2"
               >
                 <Save className="h-4 w-4" />
