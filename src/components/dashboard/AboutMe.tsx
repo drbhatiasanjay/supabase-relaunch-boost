@@ -121,14 +121,14 @@ export const AboutMe = () => {
                 <h3 className="text-base font-semibold flex items-center gap-2">
                   🎯 Main Interests
                 </h3>
-                <div className="flex flex-wrap gap-2">
+                <div className="pl-4 border-l-2 border-primary/30 space-y-2">
                   {analysis.interests.slice(0, 3).map((interest, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm border border-primary/20"
-                    >
-                      {interest}
-                    </span>
+                    <div key={idx} className="flex items-center gap-2">
+                      <div className="w-3 h-px bg-primary/30" />
+                      <span className="text-sm text-primary font-medium bg-primary/5 px-3 py-1.5 rounded-md border border-primary/20">
+                        {interest}
+                      </span>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -138,14 +138,14 @@ export const AboutMe = () => {
                 <h3 className="text-base font-semibold flex items-center gap-2">
                   📚 Key Topics
                 </h3>
-                <div className="flex flex-wrap gap-2">
+                <div className="pl-4 border-l-2 border-secondary/30 space-y-2">
                   {analysis.topics.slice(0, 3).map((topic, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm border border-secondary/20"
-                    >
-                      {topic}
-                    </span>
+                    <div key={idx} className="flex items-center gap-2">
+                      <div className="w-3 h-px bg-secondary/30" />
+                      <span className="text-sm text-secondary font-medium bg-secondary/5 px-3 py-1.5 rounded-md border border-secondary/20">
+                        {topic}
+                      </span>
+                    </div>
                   ))}
                 </div>
               </div>
