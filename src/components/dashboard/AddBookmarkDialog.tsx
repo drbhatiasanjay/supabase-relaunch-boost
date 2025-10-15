@@ -50,6 +50,8 @@ export const AddBookmarkDialog = ({
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [autoFetch, setAutoFetch] = useState(false);
+  const [fetching, setFetching] = useState(false);
 
   useEffect(() => {
     if (prefillData) {
@@ -94,6 +96,54 @@ export const AddBookmarkDialog = ({
 
   const handleRemoveTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const fetchMetadata = async (urlToFetch: string) => {
+    if (!urlToFetch || fetching) return;
+    
+    setFetching(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-bookmark-metadata', {
+        body: { url: urlToFetch }
+      });
+
+      if (error) {
+        toast.error("Could not fetch metadata", {
+          description: "Please enter details manually."
+        });
+        return;
+      }
+
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+
+      if (data?.title) setTitle(data.title);
+      if (data?.description) setDescription(data.description);
+      
+      toast.success("Metadata fetched successfully!");
+    } catch (err) {
+      console.error("Fetch metadata error:", err);
+      toast.error("Failed to fetch metadata", {
+        description: "Please enter details manually."
+      });
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const handleUrlChange = (newUrl: string) => {
+    setUrl(newUrl);
+    
+    // Auto-fetch if enabled and URL looks valid
+    if (autoFetch && newUrl.match(/^https?:\/\/.+/)) {
+      // Debounce: wait a bit before fetching
+      const timer = setTimeout(() => {
+        fetchMetadata(newUrl);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
   };
 
   const resetForm = () => {
@@ -156,6 +206,23 @@ export const AddBookmarkDialog = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+            <div>
+              <Label htmlFor="auto-fetch" className="text-sm font-medium cursor-pointer">
+                Auto-fetch metadata
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Automatically extract title and description from URL
+              </p>
+            </div>
+            <Switch
+              id="auto-fetch"
+              checked={autoFetch}
+              onCheckedChange={setAutoFetch}
+              disabled={loading || fetching}
+            />
+          </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="url">URL *</Label>
             <Input
@@ -163,10 +230,13 @@ export const AddBookmarkDialog = ({
               type="url"
               placeholder="https://example.com"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={(e) => handleUrlChange(e.target.value)}
               required
-              disabled={loading}
+              disabled={loading || fetching}
             />
+            {fetching && (
+              <p className="text-xs text-muted-foreground">Fetching metadata...</p>
+            )}
           </div>
 
           <div className="space-y-1.5">
@@ -255,10 +325,10 @@ export const AddBookmarkDialog = ({
             </Button>
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || fetching}
               className="flex-1 bg-gradient-primary hover:opacity-90 transition-opacity"
             >
-              {loading ? "Saving..." : "Save Bookmark"}
+              {loading ? "Saving..." : fetching ? "Fetching..." : "Save Bookmark"}
             </Button>
           </div>
         </form>

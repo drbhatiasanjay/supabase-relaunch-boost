@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.analyze-personality]
 verify_jwt = true
+
+[functions.fetch-bookmark-metadata]
+verify_jwt = true
