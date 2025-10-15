@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,6 +20,12 @@ interface Intent {
   tags?: string[];
 }
 
+// Input validation schema
+const chatRequestSchema = z.object({
+  phone: z.string().trim().min(1, "Phone/ID required").max(100, "Phone/ID too long").regex(/^[+\w\d-]+$/, "Invalid phone/ID format"),
+  message: z.string().trim().min(1, "Message required").max(5000, "Message too long")
+});
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -29,8 +36,24 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { phone, message }: ChatRequest = await req.json();
+    // Parse and validate input
+    const rawBody = await req.json();
+    const validationResult = chatRequestSchema.safeParse(rawBody);
     
+    if (!validationResult.success) {
+      console.log('Validation failed:', validationResult.error.errors[0].message);
+      return new Response(
+        JSON.stringify({ 
+          reply: `❌ Invalid request: ${validationResult.error.errors[0].message}` 
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      );
+    }
+
+    const { phone, message } = validationResult.data;
     console.log('Chat request received');
 
     // 1. Map phone/telegram_id to user
