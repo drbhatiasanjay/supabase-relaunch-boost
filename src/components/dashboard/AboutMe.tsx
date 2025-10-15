@@ -52,19 +52,19 @@ export const AboutMe = () => {
   return (
     <>
       <Card 
-        className="glass-card aspect-square rounded-full cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-glow group ring-2 ring-primary/40 hover:ring-primary/60 flex items-center justify-center p-3"
+        className="glass-card p-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-glow group ring-2 ring-primary/40 hover:ring-primary/60 rounded-full h-fit w-fit"
         onClick={handleAnalyzeClick}
       >
-        <div className="flex flex-col items-center justify-center gap-1">
-          <div className="p-1.5 rounded-full w-fit bg-gradient-primary shadow-[0_0_15px_hsl(var(--primary)/0.5)] group-hover:shadow-[0_0_20px_hsl(var(--primary)/0.7)] transition-all duration-200">
+        <div className="flex items-center gap-2">
+          <div className="p-1 rounded-full w-fit bg-gradient-primary shadow-[0_0_15px_hsl(var(--primary)/0.5)] group-hover:shadow-[0_0_20px_hsl(var(--primary)/0.7)] transition-all duration-200">
             <Sparkles 
-              className="w-3 h-3 text-white animate-pulse" 
+              className="w-2.5 h-2.5 text-white animate-pulse" 
               style={{ 
                 filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.8))'
               }}
             />
           </div>
-          <p className="text-[10px] font-bold tracking-tight text-center">About Me</p>
+          <p className="text-sm font-bold tracking-tight">About Me</p>
         </div>
       </Card>
 
