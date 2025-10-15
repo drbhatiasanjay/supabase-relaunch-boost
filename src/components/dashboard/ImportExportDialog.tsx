@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { parseBookmarkHTML, exportToHTML, exportToJSON, downloadFile } from "@/lib/bookmarkParser";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Bookmark } from "@/pages/Dashboard";
 
@@ -36,6 +37,12 @@ export const ImportExportDialog = ({
 
     setImporting(true);
     try {
+      // Security: Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error("File too large. Please upload a file smaller than 10MB.");
+        return;
+      }
+
       const text = await file.text();
       const parsed = parseBookmarkHTML(text);
 

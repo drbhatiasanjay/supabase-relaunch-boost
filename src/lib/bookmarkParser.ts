@@ -1,4 +1,5 @@
 // Utility functions for parsing and exporting browser bookmarks
+import { z } from 'zod';
 
 export interface ParsedBookmark {
   title: string;
@@ -7,6 +8,41 @@ export interface ParsedBookmark {
   tags: string[];
   category?: string;
 }
+
+// Security: Validation schema for imported bookmarks
+const bookmarkSchema = z.object({
+  title: z.string().trim().min(1).max(500),
+  url: z.string().trim().url().max(2000).refine(
+    (url) => url.startsWith('http://') || url.startsWith('https://'),
+    { message: 'URL must use http or https protocol' }
+  ),
+  description: z.string().max(1000).optional(),
+  tags: z.array(z.string().max(50)).max(20),
+  category: z.string().max(100).optional(),
+});
+
+// Security: Sanitize and validate a single bookmark
+const sanitizeBookmark = (raw: {
+  title?: string;
+  url?: string;
+  description?: string;
+  tags?: string[];
+  category?: string;
+}): ParsedBookmark | null => {
+  try {
+    const validated = bookmarkSchema.parse(raw);
+    return {
+      title: validated.title,
+      url: validated.url,
+      description: validated.description,
+      tags: validated.tags,
+      category: validated.category,
+    };
+  } catch {
+    // Skip invalid bookmarks
+    return null;
+  }
+};
 
 /**
  * Parse Chrome/Firefox bookmark HTML file
@@ -32,13 +68,18 @@ export const parseBookmarkHTML = (htmlContent: string): ParsedBookmark[] => {
           const addDate = link.getAttribute('add_date');
           
           if (url && title) {
-            bookmarks.push({
+            // Security: Sanitize and validate before adding
+            const sanitized = sanitizeBookmark({
               title,
               url,
               description: addDate ? `Imported on ${new Date(parseInt(addDate) * 1000).toLocaleDateString()}` : undefined,
-              tags: folderPath.length > 0 ? [folderPath[folderPath.length - 1].toLowerCase()] : [],
-              category: folderPath.length > 0 ? folderPath[folderPath.length - 1] : 'Imported',
+              tags: folderPath.length > 0 ? [folderPath[folderPath.length - 1].toLowerCase().substring(0, 50)] : [],
+              category: folderPath.length > 0 ? folderPath[folderPath.length - 1].substring(0, 100) : 'Imported',
             });
+            
+            if (sanitized) {
+              bookmarks.push(sanitized);
+            }
           }
         }
         
