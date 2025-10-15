@@ -1,7 +1,7 @@
 project_id = "hehvnfeaekpaltkfkvxd"
 
 [functions.chat-webhook]
-verify_jwt = true
+verify_jwt = false
 
 [functions.analyze-personality]
 verify_jwt = true

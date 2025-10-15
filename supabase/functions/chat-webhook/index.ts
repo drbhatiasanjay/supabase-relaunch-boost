@@ -105,60 +105,50 @@ serve(async (req) => {
     const { message, phone, telegram_id } = validationResult.data;
     console.log('Chat request received');
 
-    let userId: string | null = null;
-    let db = supabase;
-
-    // Try JWT user first
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (!userError && user) {
-      userId = user.id;
-      console.log('User authenticated via JWT');
-    } else {
-      // Fallback: map via phone/telegram_id using service role
-      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-      if (!serviceKey) {
-        console.error('SUPABASE_SERVICE_ROLE_KEY not set');
-        return new Response(
-          JSON.stringify({ reply: "Server misconfiguration. Try again later." }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-        );
-      }
-      const serviceClient = createClient(supabaseUrl, serviceKey);
-      db = serviceClient;
-
-      if (!phone && !telegram_id) {
-        return new Response(
-          JSON.stringify({ reply: "Unauthorized: missing auth or identifier (phone/telegram_id)." }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-        );
-      }
-
-      let profileRes;
-      if (phone) {
-        profileRes = await serviceClient
-          .from('profiles')
-          .select('user_id')
-          .eq('phone_number', phone)
-          .maybeSingle();
-      } else {
-        profileRes = await serviceClient
-          .from('profiles')
-          .select('user_id')
-          .eq('telegram_id', telegram_id!)
-          .maybeSingle();
-      }
-
-      if (profileRes.error || !profileRes.data) {
-        console.error('Profile lookup failed:', profileRes.error || 'not found');
-        return new Response(
-          JSON.stringify({ reply: "❌ User not found for provided identifier." }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-        );
-      }
-
-      userId = profileRes.data.user_id as string;
-      console.log('Mapped identifier to user:', userId);
+    // Use service role to map phone/telegram_id to user
+    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    if (!serviceKey) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY not set');
+      return new Response(
+        JSON.stringify({ reply: "Server misconfiguration. Try again later." }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
     }
+    
+    const serviceClient = createClient(supabaseUrl, serviceKey);
+
+    if (!phone && !telegram_id) {
+      return new Response(
+        JSON.stringify({ reply: "Unauthorized: missing identifier (phone/telegram_id)." }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+
+    let profileRes;
+    if (phone) {
+      profileRes = await serviceClient
+        .from('profiles')
+        .select('user_id')
+        .eq('phone_number', phone)
+        .maybeSingle();
+    } else {
+      profileRes = await serviceClient
+        .from('profiles')
+        .select('user_id')
+        .eq('telegram_id', telegram_id!)
+        .maybeSingle();
+    }
+
+    if (profileRes.error || !profileRes.data) {
+      console.error('Profile lookup failed:', profileRes.error || 'not found');
+      return new Response(
+        JSON.stringify({ reply: "❌ User not found for provided identifier." }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
+    const userId = profileRes.data.user_id as string;
+    console.log('Mapped identifier to user:', userId);
 
     // Rate limiting per user
     const rl = checkRateLimit(userId);
@@ -178,19 +168,19 @@ serve(async (req) => {
     
     switch (intent.type) {
       case 'reading_list':
-        reply = await getReadingList(db, userId!);
+        reply = await getReadingList(serviceClient, userId);
         break;
       case 'add_link':
-        reply = await addBookmark(db, userId!, intent.url!, intent.query);
+        reply = await addBookmark(serviceClient, userId, intent.url!, intent.query);
         break;
       case 'search':
-        reply = await searchBookmarks(db, userId!, intent.query!);
+        reply = await searchBookmarks(serviceClient, userId, intent.query!);
         break;
       case 'bored':
-        reply = await suggestBookmark(db, userId!);
+        reply = await suggestBookmark(serviceClient, userId);
         break;
       case 'chat':
-        reply = await chatAboutBookmarks(db, userId!, message);
+        reply = await chatAboutBookmarks(serviceClient, userId, message);
         break;
       default:
         reply = "🤔 I can help you with:\n\n📚 *reading list* - Show your reading list\n🔗 *add [url]* - Add a bookmark\n🔍 *search [text]* - Search bookmarks\n😴 *I'm bored* - Get a random suggestion\n💬 *Ask me anything* - Chat about your bookmarks!";
