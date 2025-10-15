@@ -31,7 +31,7 @@ serve(async (req) => {
 
     const { phone, message }: ChatRequest = await req.json();
     
-    console.log('Received chat message:', { phone, message });
+    console.log('Chat request received');
 
     // 1. Map phone/telegram_id to user
     // First try telegram_id, then phone_number
@@ -69,7 +69,7 @@ serve(async (req) => {
     }
 
     const userId = profile.user_id;
-    console.log('Mapped phone to user:', userId);
+    console.log('User authenticated successfully');
 
     // 2. Parse intent
     const intent = parseIntent(message);
@@ -110,9 +110,8 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Request processing error:', error instanceof Error ? error.message : 'Unknown error');
     const response = { reply: "Sorry, I encountered an error processing your request." };
-    console.log('Sending response:', response);
     return new Response(
       JSON.stringify(response),
       { 
@@ -203,10 +202,10 @@ async function getReadingList(supabase: any, userId: string): Promise<string> {
     return "❌ Error fetching reading list";
   }
 
-  console.log(`Reading list query user=${userId} count=${bookmarks?.length ?? 0}`);
+  console.log(`Reading list query completed, count=${bookmarks?.length ?? 0}`);
 
   if (!bookmarks || bookmarks.length === 0) {
-    console.log('Reading list is empty for user:', userId);
+    console.log('Reading list is empty');
     return "📚 Your reading list is empty.\n\nMark some bookmarks for reading from the dashboard!";
   }
 
