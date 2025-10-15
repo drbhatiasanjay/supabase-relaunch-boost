@@ -291,7 +291,7 @@ const Dashboard = () => {
             <div className="ml-auto text-sm text-muted-foreground flex items-center gap-4 whitespace-nowrap">
               {selectedFilter === "reading" && (
                 <span className="font-medium text-primary">
-                  {filteredBookmarks.length}/{filteredBookmarks.filter(b => b.read).length} Read
+                  Read: {filteredBookmarks.filter(b => b.read).length}/{filteredBookmarks.length}
                 </span>
               )}
               <span>
