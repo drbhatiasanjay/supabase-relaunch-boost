@@ -121,15 +121,22 @@ export const AboutMe = () => {
                 <h3 className="text-base font-semibold flex items-center gap-2">
                   🎯 Main Interests
                 </h3>
-                <div className="pl-4 border-l-2 border-primary/30 space-y-2">
-                  {analysis.interests.slice(0, 3).map((interest, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <div className="w-3 h-px bg-primary/30" />
-                      <span className="text-sm text-primary font-medium bg-primary/5 px-3 py-1.5 rounded-md border border-primary/20">
-                        {interest}
-                      </span>
-                    </div>
-                  ))}
+                <div className="relative bg-gradient-to-br from-primary/5 to-transparent p-4 rounded-lg border border-primary/10">
+                  <div className="flex flex-wrap justify-center gap-3 items-center">
+                    {analysis.interests.slice(0, 3).map((interest, idx) => (
+                      <div key={idx} className="relative">
+                        {idx > 0 && (
+                          <div className="absolute -left-3 top-1/2 w-6 h-px bg-gradient-to-r from-primary/40 to-primary/20" />
+                        )}
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-primary/20 blur-sm rounded-full" />
+                          <span className="relative block text-xs text-primary font-medium bg-background px-4 py-2 rounded-full border-2 border-primary/30 shadow-sm">
+                            {interest}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -138,15 +145,22 @@ export const AboutMe = () => {
                 <h3 className="text-base font-semibold flex items-center gap-2">
                   📚 Key Topics
                 </h3>
-                <div className="pl-4 border-l-2 border-secondary/30 space-y-2">
-                  {analysis.topics.slice(0, 3).map((topic, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <div className="w-3 h-px bg-secondary/30" />
-                      <span className="text-sm text-secondary font-medium bg-secondary/5 px-3 py-1.5 rounded-md border border-secondary/20">
-                        {topic}
-                      </span>
-                    </div>
-                  ))}
+                <div className="relative bg-gradient-to-br from-secondary/5 to-transparent p-4 rounded-lg border border-secondary/10">
+                  <div className="flex flex-wrap justify-center gap-3 items-center">
+                    {analysis.topics.slice(0, 3).map((topic, idx) => (
+                      <div key={idx} className="relative">
+                        {idx > 0 && (
+                          <div className="absolute -left-3 top-1/2 w-6 h-px bg-gradient-to-r from-secondary/40 to-secondary/20" />
+                        )}
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-secondary/20 blur-sm rounded-full" />
+                          <span className="relative block text-xs text-secondary font-medium bg-background px-4 py-2 rounded-full border-2 border-secondary/30 shadow-sm">
+                            {topic}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
