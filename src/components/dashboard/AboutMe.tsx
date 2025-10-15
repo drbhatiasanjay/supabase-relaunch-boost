@@ -73,13 +73,15 @@ export const AboutMe = () => {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col bg-gradient-to-br from-background via-primary/5 to-secondary/5">
           <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="flex items-center gap-2 text-xl bg-gradient-primary bg-clip-text text-transparent">
-              <Sparkles className="w-5 h-5 text-primary animate-pulse" />
-              Your Personality Insights
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              AI-powered analysis based on your bookmark collection
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="flex items-center gap-2 text-xl bg-gradient-primary bg-clip-text text-transparent">
+                <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+                Your Personality Insights
+              </DialogTitle>
+              <DialogDescription className="text-xs m-0">
+                AI-powered analysis
+              </DialogDescription>
+            </div>
           </DialogHeader>
 
           {isLoading ? (
@@ -113,7 +115,7 @@ export const AboutMe = () => {
                   <h3 className="text-xs font-bold flex items-center gap-1.5">
                     📖 Reading Patterns
                   </h3>
-                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  <p className="text-[10px] text-foreground/80 leading-relaxed font-medium">
                     {analysis.readingPatterns}
                   </p>
                 </div>
