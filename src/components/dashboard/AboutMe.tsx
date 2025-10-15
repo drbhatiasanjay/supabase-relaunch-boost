@@ -64,7 +64,7 @@ export const AboutMe = () => {
               }}
             />
           </div>
-          <p className="text-lg font-bold tracking-tight">About Me</p>
+          <p className="text-sm font-bold tracking-tight">About Me</p>
         </div>
       </Card>
 
