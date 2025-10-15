@@ -183,7 +183,7 @@ serve(async (req) => {
         reply = await chatAboutBookmarks(serviceClient, userId, message);
         break;
       default:
-        reply = "🤔 I can help you with:\n\n📚 *reading list* - Show your reading list\n🔗 *add [url]* - Add a bookmark\n🔍 *search [text]* - Search bookmarks\n😴 *I'm bored* - Get a random suggestion\n💬 *Ask me anything* - Chat about your bookmarks!";
+        reply = "🔖 *I'm your Bookmark Assistant!*\n\nI can only help with questions about your saved bookmarks, links, and reading materials.\n\n*What I can do:*\n📚 Show your reading list\n🔗 Add bookmarks\n🔍 Search your saved links\n💡 Recommend articles to read\n📊 Analyze your collection\n🏷️ Help with tags and organization\n\n*Try asking:*\n• \"Show me React tutorials\"\n• \"What should I read next?\"\n• \"How many bookmarks do I have?\"\n• \"Summarize my collection\"\n\nPlease ask something related to your bookmarks! 😊";
     }
 
     // Return only 'reply' field for n8n/Telegram compatibility
@@ -209,6 +209,74 @@ serve(async (req) => {
     );
   }
 });
+
+function isBookmarkRelated(message: string): boolean {
+  const lowerMessage = message.toLowerCase().trim();
+  
+  // Bookmark-specific keywords that indicate valid queries
+  const bookmarkKeywords = [
+    'bookmark', 'link', 'save', 'saved', 'article', 'reading list', 'read',
+    'tutorial', 'resource', 'tag', 'folder', 'collection', 'organize',
+    'learn', 'study', 'framework', 'library', 'documentation', 'docs',
+    'web development', 'programming', 'code', 'coding', 'tech',
+    'react', 'vue', 'angular', 'node', 'python', 'javascript', 'typescript',
+    'css', 'html', 'my bookmarks', 'my links', 'my collection', 'my saves'
+  ];
+  
+  // Off-topic patterns that should be rejected
+  const offTopicPatterns = [
+    // General knowledge questions
+    /capital of/i, /president of/i, /king of/i, /queen of/i,
+    /population of/i, /currency of/i, /language of/i,
+    // General "who" questions (unless about saved content)
+    /^who (is|was|are|were)(?!.*\b(saved|bookmark|link)\b)/i,
+    // Weather, time, math, etc.
+    /weather/i, /temperature/i, /time in/i, /\d+\s*[\+\-\*\/]\s*\d+/,
+    // Personal questions unrelated to bookmarks
+    /how old are you/i, /who made you/i, /what are you/i,
+    // Random greetings without context
+    /^(hi|hello|hey|sup)$/i,
+  ];
+  
+  // Check for off-topic patterns first
+  if (offTopicPatterns.some(pattern => pattern.test(message))) {
+    return false;
+  }
+  
+  // If message contains bookmark keywords, it's valid
+  if (bookmarkKeywords.some(keyword => lowerMessage.includes(keyword))) {
+    return true;
+  }
+  
+  // If message has a URL, it's likely bookmark-related
+  if (/(https?:\/\/[^\s]+)/.test(message)) {
+    return true;
+  }
+  
+  // If it's a very short message without context, be strict
+  const wordCount = lowerMessage.split(/\s+/).length;
+  if (wordCount <= 3 && !lowerMessage.includes('?')) {
+    // Single words or short phrases need to be tech-related
+    const techTerms = [
+      'react', 'vue', 'angular', 'node', 'python', 'java', 'ruby', 'php', 'swift',
+      'css', 'html', 'javascript', 'typescript', 'nextjs', 'tailwind', 'prisma',
+      'github', 'gitlab', 'stackoverflow', 'mdn', 'w3schools'
+    ];
+    return techTerms.some(term => lowerMessage.includes(term));
+  }
+  
+  // For questions, check if they're about personal collection
+  if (lowerMessage.includes('?')) {
+    const collectionQuestions = [
+      'what', 'how many', 'which', 'do i have', 'did i save', 'should i',
+      'can you show', 'tell me about', 'summarize', 'topics', 'most common'
+    ];
+    return collectionQuestions.some(q => lowerMessage.includes(q));
+  }
+  
+  // Default to false for safety
+  return false;
+}
 
 function parseIntent(message: string): Intent {
   const lowerMessage = message.toLowerCase().trim();
@@ -247,8 +315,12 @@ function parseIntent(message: string): Intent {
     'should i', 'help', 'any', 'have i', 'my bookmarks', 'my collection'
   ];
 
-  // If it's a question or conversational message, treat as chat
+  // Check if message is bookmark-related before routing to chat
   if (chatKeywords.some(keyword => lowerMessage.includes(keyword))) {
+    // Validate that it's actually about bookmarks
+    if (!isBookmarkRelated(message)) {
+      return { type: 'unknown' };
+    }
     return { type: 'chat' };
   }
 
@@ -262,9 +334,11 @@ function parseIntent(message: string): Intent {
     return { type: 'chat' };
   }
 
-  // For multi-word messages that aren't commands, default to chat
+  // For multi-word messages that aren't commands, check if bookmark-related
   if (wordCount > 2 && !lowerMessage.startsWith('#')) {
-    return { type: 'chat' };
+    if (isBookmarkRelated(message)) {
+      return { type: 'chat' };
+    }
   }
 
   return { type: 'unknown' };
