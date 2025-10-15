@@ -86,6 +86,32 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // Real-time subscription for bookmarks
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('bookmarks-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookmarks',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          console.log('📊 Bookmark change detected, refreshing...');
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, refetch]);
+
   useEffect(() => {
     // Handle bookmarklet prefill
     const add = searchParams.get("add");
