@@ -200,6 +200,38 @@ serve(async (req) => {
         reply = "🔖 *I'm your Bookmark Assistant!*\n\nI can only help with questions about your saved bookmarks, links, and reading materials.\n\n*What I can do:*\n📚 Show your reading list\n🔗 Add bookmarks\n🔍 Search your saved links\n💡 Recommend articles to read\n📊 Analyze your collection\n🏷️ Help with tags and organization\n\n*Try asking:*\n• \"Show me React tutorials\"\n• \"What should I read next?\"\n• \"How many bookmarks do I have?\"\n• \"Summarize my collection\"\n\nPlease ask something related to your bookmarks! 😊";
     }
 
+    // Send message to Telegram if it's a Telegram request
+    if (chatRequest.telegram_id) {
+      const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
+      if (TELEGRAM_BOT_TOKEN) {
+        try {
+          const telegramResponse = await fetch(
+            `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: chatRequest.telegram_id,
+                text: reply,
+                parse_mode: 'Markdown',
+              }),
+            }
+          );
+          
+          if (!telegramResponse.ok) {
+            const errorData = await telegramResponse.text();
+            console.error('Telegram API error:', telegramResponse.status, errorData);
+          } else {
+            console.log('✅ Message sent to Telegram successfully');
+          }
+        } catch (telegramError) {
+          console.error('Error sending to Telegram:', telegramError);
+        }
+      } else {
+        console.warn('TELEGRAM_BOT_TOKEN not configured - cannot send to Telegram');
+      }
+    }
+
     // Return only 'reply' field for n8n/Telegram compatibility
     const response = { reply };
     console.log('Sending response with reply length:', reply.length);
