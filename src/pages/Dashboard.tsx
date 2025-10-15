@@ -216,22 +216,15 @@ const Dashboard = () => {
         </div>
 
         <main className={`flex-1 px-4 sm:px-6 lg:px-8 py-6 mx-auto w-full transition-all duration-300 ${isSidebarOpen ? 'max-w-[1800px]' : 'max-w-[1800px]'}`}>
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-            <div className="lg:col-span-3">
-              <DashboardStats
-                total={stats.total}
-                reading={stats.reading}
-                tags={stats.tags}
-                categories={stats.categories}
-                thisWeek={stats.thisWeek}
-                selectedFilter={selectedFilter}
-                onFilterChange={setSelectedFilter}
-              />
-            </div>
-            <div className="space-y-6">
-              <AboutMe />
-            </div>
-          </div>
+          <DashboardStats
+            total={stats.total}
+            reading={stats.reading}
+            tags={stats.tags}
+            categories={stats.categories}
+            thisWeek={stats.thisWeek}
+            selectedFilter={selectedFilter}
+            onFilterChange={setSelectedFilter}
+          />
 
           <div className="mb-6">
             <LeaderboardCard userId={user?.id} />

@@ -1,5 +1,6 @@
-import { BookMarked, Bookmark, Tag, FolderOpen, TrendingUp } from "lucide-react";
+import { BookMarked, Bookmark, Tag, FolderOpen, TrendingUp, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { AboutMe } from "./AboutMe";
 
 interface DashboardStatsProps {
   total: number;
@@ -21,7 +22,7 @@ export const DashboardStats = ({
   onFilterChange,
 }: DashboardStatsProps) => {
   return (
-    <div className="grid grid-cols-5 gap-3 mb-4 max-w-2xl">
+    <div className="grid grid-cols-6 gap-3 mb-4 max-w-full">
       <Card
         className={`glass-card p-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.02] group ${
           selectedFilter === "all" ? "ring-1 ring-primary shadow-glow" : "hover:shadow-md"
@@ -99,6 +100,8 @@ export const DashboardStats = ({
           <p className="text-xs text-muted-foreground font-medium leading-tight">This Week</p>
         </div>
       </Card>
+
+      <AboutMe />
     </div>
   );
 };

@@ -47,18 +47,21 @@ export const AboutMe = () => {
   return (
     <>
       <Card 
-        className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-glow group p-6"
+        className="glass-card p-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md group"
         onClick={handleAnalyzeClick}
       >
-        <div className="flex flex-col items-center justify-center text-center space-y-2">
-          <Sparkles 
-            className="w-8 h-8 text-primary animate-pulse mb-2" 
-            style={{ 
-              filter: 'drop-shadow(0 0 8px hsl(var(--primary-glow) / 0.6))',
-              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-            }}
-          />
-          <p className="text-2xl font-semibold">About Me</p>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <div className="p-1 rounded w-fit bg-primary/10 group-hover:bg-gradient-primary transition-all duration-200">
+              <Sparkles 
+                className="w-2.5 h-2.5 text-primary group-hover:text-white" 
+                style={{ 
+                  filter: 'drop-shadow(0 0 4px hsl(var(--primary-glow) / 0.6))'
+                }}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground font-medium leading-tight">About Me</p>
         </div>
       </Card>
 
