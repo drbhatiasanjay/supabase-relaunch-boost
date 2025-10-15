@@ -16,7 +16,7 @@ import { BulkActionsBar } from "@/components/dashboard/BulkActionsBar";
 import { TagManager } from "@/components/dashboard/TagManager";
 import { BookmarkletGuide } from "@/components/dashboard/BookmarkletGuide";
 import { AboutMe } from "@/components/dashboard/AboutMe";
-import { LeaderboardCard } from "@/components/dashboard/LeaderboardCard";
+
 import { toast } from "sonner";
 import {
   Select,
@@ -225,10 +225,6 @@ const Dashboard = () => {
             selectedFilter={selectedFilter}
             onFilterChange={setSelectedFilter}
           />
-
-          <div className="mb-6">
-            <LeaderboardCard userId={user?.id} />
-          </div>
 
           {/* Filters and Tag Management Row */}
           <div className="flex flex-wrap items-center gap-3 mb-6">
