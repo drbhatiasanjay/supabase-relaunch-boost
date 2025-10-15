@@ -283,7 +283,7 @@ const Dashboard = () => {
 
             <BookmarkletGuide />
 
-            <div className="ml-auto text-sm text-muted-foreground flex items-center">
+            <div className="ml-auto text-sm text-muted-foreground flex items-center whitespace-nowrap">
               {filteredBookmarks.length} bookmark{filteredBookmarks.length !== 1 ? 's' : ''}
             </div>
           </div>

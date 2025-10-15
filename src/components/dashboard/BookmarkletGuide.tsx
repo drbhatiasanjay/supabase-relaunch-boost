@@ -28,7 +28,7 @@ export const BookmarkletGuide = () => {
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" disabled className="opacity-50 cursor-not-allowed">
           <Bookmark className="w-4 h-4 mr-2" />
-          Quick Save (Coming Soon)
+          Quick Save
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
