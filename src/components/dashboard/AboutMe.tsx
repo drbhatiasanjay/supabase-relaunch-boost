@@ -89,34 +89,37 @@ export const AboutMe = () => {
             </div>
           ) : analysis ? (
             <div className="space-y-4 py-3">
-              {/* Personality Traits - First */}
-              <div className="space-y-2">
-                <h3 className="text-base font-semibold flex items-center gap-2">
-                  ✨ Personality Traits
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {analysis.personalityTraits.map((trait, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1.5 rounded-full bg-accent/10 text-accent text-sm border border-accent/20"
-                    >
-                      {trait}
-                    </span>
-                  ))}
+              {/* Two Column Layout: Personality Traits and Reading Patterns */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Personality Traits - Left Column */}
+                <div className="space-y-2">
+                  <h3 className="text-base font-semibold flex items-center gap-2">
+                    ✨ Personality Traits
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {analysis.personalityTraits.map((trait, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1.5 rounded-full bg-accent/10 text-accent text-sm border border-accent/20"
+                      >
+                        {trait}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Reading Patterns - Right Column */}
+                <div className="space-y-2">
+                  <h3 className="text-base font-semibold flex items-center gap-2">
+                    📖 Reading Patterns
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed bg-muted/50 p-3 rounded-lg">
+                    {analysis.readingPatterns}
+                  </p>
                 </div>
               </div>
 
-              {/* Reading Patterns - Second */}
-              <div className="space-y-2">
-                <h3 className="text-base font-semibold flex items-center gap-2">
-                  📖 Reading Patterns
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed bg-muted/50 p-3 rounded-lg">
-                  {analysis.readingPatterns}
-                </p>
-              </div>
-
-              {/* Neo4J-Style Knowledge Graph */}
+              {/* Neo4J-Style Knowledge Graph - Below */}
               <div className="space-y-2">
                 <h3 className="text-base font-semibold flex items-center gap-2">
                   🧠 Knowledge Graph
