@@ -56,7 +56,7 @@ const Dashboard = () => {
   const [selectedBookmarks, setSelectedBookmarks] = useState<Set<string>>(new Set());
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [prefillData, setPrefillData] = useState<any>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Use optimized hooks with React Query caching
   const { bookmarks, isLoading, deleteBookmark, toggleReading, bulkDelete, bulkMoveToFolder, refetch } = 
