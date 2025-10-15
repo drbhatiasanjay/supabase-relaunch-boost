@@ -228,7 +228,9 @@ const Dashboard = () => {
                 onFilterChange={setSelectedFilter}
               />
             </div>
-            <AboutMe />
+            <div className="flex items-center justify-center">
+              <AboutMe />
+            </div>
           </div>
 
           {/* Filters and Tag Management Row */}
