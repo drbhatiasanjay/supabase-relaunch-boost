@@ -78,7 +78,7 @@ export const AboutMe = () => {
                 <Sparkles className="w-5 h-5 text-primary animate-pulse" />
                 Your Personality Insights
               </DialogTitle>
-              <DialogDescription className="text-xs m-0">
+              <DialogDescription className="text-sm m-0 text-center">
                 AI-powered analysis
               </DialogDescription>
             </div>
