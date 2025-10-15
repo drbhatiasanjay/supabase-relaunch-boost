@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 interface DashboardStatsProps {
   total: number;
   reading: number;
+  read: number;
   tags: number;
   categories: number;
   thisWeek: number;
@@ -14,6 +15,7 @@ interface DashboardStatsProps {
 export const DashboardStats = ({
   total,
   reading,
+  read,
   tags,
   categories,
   thisWeek,
@@ -60,7 +62,11 @@ export const DashboardStats = ({
             </div>
             <p className="text-lg font-bold tracking-tight">{reading}</p>
           </div>
-          <p className="text-xs text-muted-foreground font-medium leading-tight">Reading List</p>
+          <p className="text-xs text-muted-foreground font-medium leading-tight">
+            Reading List {selectedFilter === "reading" && reading > 0 && (
+              <span className="text-primary font-semibold">({read}/{reading} Read)</span>
+            )}
+          </p>
         </div>
       </Card>
 

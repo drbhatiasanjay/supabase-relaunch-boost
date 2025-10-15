@@ -21,7 +21,7 @@ export type Database = {
           description: string | null
           folder_id: string | null
           id: string
-          read: boolean | null
+          read: boolean
           reading: boolean | null
           tags: string[] | null
           title: string
@@ -35,7 +35,7 @@ export type Database = {
           description?: string | null
           folder_id?: string | null
           id?: string
-          read?: boolean | null
+          read?: boolean
           reading?: boolean | null
           tags?: string[] | null
           title: string
@@ -49,7 +49,7 @@ export type Database = {
           description?: string | null
           folder_id?: string | null
           id?: string
-          read?: boolean | null
+          read?: boolean
           reading?: boolean | null
           tags?: string[] | null
           title?: string

@@ -176,6 +176,7 @@ const Dashboard = () => {
   const stats = useMemo(() => ({
     total: bookmarks.length,
     reading: bookmarks.filter(b => b.reading).length,
+    read: bookmarks.filter(b => b.reading && b.read).length,
     tags: new Set(bookmarks.flatMap(b => b.tags)).size,
     categories: new Set(bookmarks.map(b => b.category).filter(Boolean)).size,
     thisWeek: bookmarks.filter(b => new Date(b.created_at) >= weekAgo).length,
@@ -226,6 +227,7 @@ const Dashboard = () => {
               <DashboardStats
                 total={stats.total}
                 reading={stats.reading}
+                read={stats.read}
                 tags={stats.tags}
                 categories={stats.categories}
                 thisWeek={stats.thisWeek}
@@ -289,11 +291,6 @@ const Dashboard = () => {
             <BookmarkletGuide />
 
             <div className="ml-auto text-sm text-muted-foreground flex items-center gap-4 whitespace-nowrap">
-              {selectedFilter === "reading" && (
-                <span className="font-medium text-primary">
-                  Read: {filteredBookmarks.filter(b => b.read).length}/{filteredBookmarks.length}
-                </span>
-              )}
               <span>
                 {filteredBookmarks.length} bookmark{filteredBookmarks.length !== 1 ? 's' : ''}
               </span>
