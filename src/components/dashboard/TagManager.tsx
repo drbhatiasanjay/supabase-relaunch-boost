@@ -296,32 +296,48 @@ export const TagManager = ({
         </div>
       )}
 
-      {availableTags.length > 0 && selectedTags.length === 0 && (
+      {availableTags.length > 0 && (
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm" className="h-9 text-xs">
-              Filter by tags ({availableTags.length})
+              {selectedTags.length > 0 
+                ? `+ Add tags (${availableTags.length - selectedTags.length} more)` 
+                : `Filter by tags (${availableTags.length})`}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-80 p-3" align="start">
-            <div className="flex flex-wrap gap-2">
-              {availableTags.map((tagName) => {
-                const tag = tags.find((t) => t.name === tagName);
-                return (
-                  <Badge
-                    key={tagName}
-                    variant="outline"
-                    className="cursor-pointer"
-                    style={{
-                      borderColor: tag?.color || undefined,
-                      color: tag?.color || undefined,
-                    }}
-                    onClick={() => toggleTag(tagName)}
-                  >
-                    {tagName}
-                  </Badge>
-                );
-              })}
+            <div className="space-y-2">
+              <div className="text-xs font-medium text-muted-foreground">
+                Click to {selectedTags.length > 0 ? 'add/remove' : 'select'} tags
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {availableTags.map((tagName) => {
+                  const tag = tags.find((t) => t.name === tagName);
+                  const isSelected = selectedTags.includes(tagName);
+                  return (
+                    <Badge
+                      key={tagName}
+                      variant={isSelected ? "default" : "outline"}
+                      className="cursor-pointer transition-all"
+                      style={
+                        isSelected
+                          ? {
+                              backgroundColor: tag?.color || undefined,
+                              color: tag?.color ? "#fff" : undefined,
+                            }
+                          : {
+                              borderColor: tag?.color || undefined,
+                              color: tag?.color || undefined,
+                            }
+                      }
+                      onClick={() => toggleTag(tagName)}
+                    >
+                      {tagName}
+                      {isSelected && <X className="w-3 h-3 ml-1" />}
+                    </Badge>
+                  );
+                })}
+              </div>
             </div>
           </PopoverContent>
         </Popover>
