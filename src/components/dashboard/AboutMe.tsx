@@ -116,70 +116,121 @@ export const AboutMe = () => {
                 </p>
               </div>
 
-              {/* Knowledge Graph - Interests and Topics Connected */}
+              {/* Neo4J-Style Knowledge Graph */}
               <div className="space-y-2">
                 <h3 className="text-base font-semibold flex items-center gap-2">
                   🧠 Knowledge Graph
                 </h3>
-                <div className="relative bg-gradient-to-br from-primary/5 via-secondary/5 to-transparent p-6 rounded-lg border border-primary/10 min-h-[200px]">
+                <div className="relative bg-gradient-to-br from-primary/5 via-secondary/5 to-transparent p-8 rounded-lg border border-primary/10 min-h-[280px]">
                   {/* SVG for connection lines */}
                   <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 0 }}>
-                    {/* Lines connecting interests to topics */}
-                    {analysis.interests.slice(0, 3).map((_, interestIdx) =>
-                      analysis.topics.slice(0, 3).map((_, topicIdx) => {
-                        const startX = 30 + (interestIdx * 120);
-                        const startY = 40;
-                        const endX = 30 + (topicIdx * 120);
-                        const endY = 140;
+                    {/* User to Interests connections */}
+                    {analysis.interests.slice(0, 3).map((_, idx) => {
+                      const angle = (idx * 120 - 60) * (Math.PI / 180);
+                      const endX = 50 + Math.cos(angle) * 25;
+                      const endY = 50 + Math.sin(angle) * 35;
+                      return (
+                        <line
+                          key={`user-interest-${idx}`}
+                          x1="50%"
+                          y1="40%"
+                          x2={`${endX}%`}
+                          y2={`${endY}%`}
+                          stroke="hsl(var(--primary) / 0.4)"
+                          strokeWidth="2"
+                        />
+                      );
+                    })}
+                    
+                    {/* Interests to Topics connections */}
+                    {analysis.interests.slice(0, 3).map((_, interestIdx) => {
+                      const interestAngle = (interestIdx * 120 - 60) * (Math.PI / 180);
+                      const startX = 50 + Math.cos(interestAngle) * 25;
+                      const startY = 50 + Math.sin(interestAngle) * 35;
+                      
+                      return analysis.topics.slice(0, 3).map((_, topicIdx) => {
+                        const topicAngle = (topicIdx * 120 - 60) * (Math.PI / 180);
+                        const endX = 50 + Math.cos(topicAngle) * 45;
+                        const endY = 50 + Math.sin(topicAngle) * 55;
+                        
                         return (
                           <line
-                            key={`${interestIdx}-${topicIdx}`}
-                            x1={startX}
-                            y1={startY}
-                            x2={endX}
-                            y2={endY}
-                            stroke="hsl(var(--primary) / 0.2)"
+                            key={`interest-${interestIdx}-topic-${topicIdx}`}
+                            x1={`${startX}%`}
+                            y1={`${startY}%`}
+                            x2={`${endX}%`}
+                            y2={`${endY}%`}
+                            stroke="hsl(var(--secondary) / 0.2)"
                             strokeWidth="1"
-                            strokeDasharray="2,2"
+                            strokeDasharray="3,3"
                           />
                         );
-                      })
-                    )}
+                      });
+                    })}
                   </svg>
 
-                  {/* Interest Nodes (Top Row) */}
-                  <div className="relative flex justify-around mb-16" style={{ zIndex: 1 }}>
-                    {analysis.interests.slice(0, 3).map((interest, idx) => (
-                      <div key={idx} className="flex flex-col items-center">
+                  {/* User Node (Center) */}
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" style={{ zIndex: 3 }}>
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-primary blur-lg opacity-60 rounded-full animate-pulse" />
+                      <div className="relative w-20 h-20 rounded-full bg-gradient-primary border-4 border-primary flex items-center justify-center shadow-2xl">
+                        <span className="text-2xl">👤</span>
+                      </div>
+                    </div>
+                    <span className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-primary whitespace-nowrap">
+                      You
+                    </span>
+                  </div>
+
+                  {/* Interest Nodes (Middle Ring) */}
+                  {analysis.interests.slice(0, 3).map((interest, idx) => {
+                    const angle = (idx * 120 - 60) * (Math.PI / 180);
+                    const x = 50 + Math.cos(angle) * 25;
+                    const y = 50 + Math.sin(angle) * 35;
+                    
+                    return (
+                      <div
+                        key={idx}
+                        className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                        style={{ left: `${x}%`, top: `${y}%`, zIndex: 2 }}
+                      >
                         <div className="relative group">
-                          <div className="absolute inset-0 bg-primary/30 blur-md rounded-full group-hover:bg-primary/40 transition-all" />
-                          <div className="relative w-16 h-16 rounded-full bg-gradient-primary border-2 border-primary flex items-center justify-center shadow-lg">
-                            <span className="text-xl">🎯</span>
+                          <div className="absolute inset-0 bg-primary/30 blur-md rounded-full group-hover:bg-primary/50 transition-all" />
+                          <div className="relative w-14 h-14 rounded-full bg-gradient-to-br from-primary/80 to-primary border-2 border-primary/50 flex items-center justify-center shadow-lg">
+                            <span className="text-lg">🎯</span>
                           </div>
                         </div>
-                        <span className="mt-2 text-xs text-primary font-medium text-center max-w-[100px] line-clamp-2">
+                        <span className="absolute top-full mt-1 left-1/2 transform -translate-x-1/2 text-[10px] text-primary font-medium text-center max-w-[80px] line-clamp-2">
                           {interest}
                         </span>
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
 
-                  {/* Topic Nodes (Bottom Row) */}
-                  <div className="relative flex justify-around" style={{ zIndex: 1 }}>
-                    {analysis.topics.slice(0, 3).map((topic, idx) => (
-                      <div key={idx} className="flex flex-col items-center">
+                  {/* Topic Nodes (Outer Ring) */}
+                  {analysis.topics.slice(0, 3).map((topic, idx) => {
+                    const angle = (idx * 120 - 60) * (Math.PI / 180);
+                    const x = 50 + Math.cos(angle) * 45;
+                    const y = 50 + Math.sin(angle) * 55;
+                    
+                    return (
+                      <div
+                        key={idx}
+                        className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                        style={{ left: `${x}%`, top: `${y}%`, zIndex: 1 }}
+                      >
                         <div className="relative group">
-                          <div className="absolute inset-0 bg-secondary/30 blur-md rounded-full group-hover:bg-secondary/40 transition-all" />
-                          <div className="relative w-16 h-16 rounded-full bg-secondary border-2 border-secondary/50 flex items-center justify-center shadow-lg">
-                            <span className="text-xl">📚</span>
+                          <div className="absolute inset-0 bg-secondary/30 blur-md rounded-full group-hover:bg-secondary/50 transition-all" />
+                          <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-secondary/70 to-secondary/50 border-2 border-secondary/40 flex items-center justify-center shadow-lg">
+                            <span className="text-base">📚</span>
                           </div>
                         </div>
-                        <span className="mt-2 text-xs text-secondary font-medium text-center max-w-[100px] line-clamp-2">
+                        <span className="absolute top-full mt-1 left-1/2 transform -translate-x-1/2 text-[9px] text-secondary font-medium text-center max-w-[70px] line-clamp-2">
                           {topic}
                         </span>
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
