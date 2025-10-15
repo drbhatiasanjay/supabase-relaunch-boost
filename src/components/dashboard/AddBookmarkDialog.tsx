@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
@@ -54,18 +55,18 @@ export const AddBookmarkDialog = ({
   const [fetching, setFetching] = useState(false);
 
   useEffect(() => {
-    if (prefillData) {
-      setUrl(prefillData.url || "");
-      setTitle(prefillData.title || "");
-      setDescription(prefillData.description || "");
-    }
-  }, [prefillData]);
-
-  useEffect(() => {
     if (open) {
+      // Reset form when dialog opens
+      if (prefillData) {
+        setUrl(prefillData.url || "");
+        setTitle(prefillData.title || "");
+        setDescription(prefillData.description || "");
+      } else {
+        resetForm();
+      }
       fetchAvailableTags();
     }
-  }, [open]);
+  }, [open, prefillData]);
 
   const fetchAvailableTags = async () => {
     try {
@@ -209,8 +210,8 @@ export const AddBookmarkDialog = ({
         </DialogHeader>
 
         <div className="max-h-[70vh] overflow-y-auto pr-1">
-          <form onSubmit={handleSubmit} className="space-y-2">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border">
+          <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/50 border">
             <div>
               <Label htmlFor="auto-fetch" className="text-sm font-medium cursor-pointer">
                 Auto-fetch metadata
@@ -244,18 +245,56 @@ export const AddBookmarkDialog = ({
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              placeholder="Bookmark title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              disabled={loading}
-              className="h-9"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                placeholder="Bookmark title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                disabled={loading}
+                className="h-9"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="tags">Tags</Label>
+              <Input
+                id="tags"
+                placeholder="Type and press Enter"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleAddTag}
+                disabled={loading}
+                list="tag-suggestions"
+                className="h-9"
+              />
+              <datalist id="tag-suggestions">
+                {availableTags.map((tag) => (
+                  <option key={tag} value={tag} />
+                ))}
+              </datalist>
+            </div>
           </div>
+
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="gap-1 text-xs">
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(tag)}
+                    className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="description">Description</Label>
@@ -271,53 +310,16 @@ export const AddBookmarkDialog = ({
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="tags">Tags</Label>
-            <Input
-              id="tags"
-              placeholder="Type and press Enter"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleAddTag}
-              disabled={loading}
-              list="tag-suggestions"
-              className="h-9"
-            />
-            <datalist id="tag-suggestions">
-              {availableTags.map((tag) => (
-                <option key={tag} value={tag} />
-              ))}
-            </datalist>
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-1.5">
-                {tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="gap-1 text-xs">
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTag(tag)}
-                      className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
-            <div>
-              <Label htmlFor="reading" className="text-sm cursor-pointer">
-                Add to Reading List
-              </Label>
-            </div>
-            <Switch
+          <div className="flex items-center space-x-2">
+            <Checkbox
               id="reading"
               checked={reading}
-              onCheckedChange={setReading}
+              onCheckedChange={(checked) => setReading(checked === true)}
               disabled={loading}
             />
+            <Label htmlFor="reading" className="text-sm cursor-pointer">
+              Add to Reading List
+            </Label>
           </div>
 
           <div className="flex gap-3 pt-2">
