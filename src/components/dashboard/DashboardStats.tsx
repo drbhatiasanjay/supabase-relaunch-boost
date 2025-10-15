@@ -21,7 +21,7 @@ export const DashboardStats = ({
   onFilterChange,
 }: DashboardStatsProps) => {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+    <div className="grid grid-cols-5 gap-2 sm:gap-3 md:gap-4 mb-6">
       <Card
         className={`glass-card p-4 sm:p-5 cursor-pointer transition-all duration-200 hover:scale-[1.02] group ${
           selectedFilter === "all" ? "ring-2 ring-primary shadow-glow" : "hover:shadow-md"
