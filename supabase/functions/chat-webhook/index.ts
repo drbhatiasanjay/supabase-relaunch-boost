@@ -305,12 +305,17 @@ function parseIntent(message: string): Intent {
     return { type: 'reading_list' };
   }
 
-  // Add link intent
+  // Add link intent - accept "add <url>" OR plain URLs
   const urlRegex = /(https?:\/\/[^\s]+)/;
   const urlMatch = message.match(urlRegex);
-  if (lowerMessage.includes('add') && urlMatch) {
+  if (urlMatch) {
     const url = urlMatch[1];
-    const description = message.replace(urlMatch[0], '').replace(/add/i, '').trim();
+    // If message starts with "add", strip it out
+    let description = message.replace(urlMatch[0], '').replace(/add/i, '').trim();
+    // If no description remains (just a plain URL), set empty
+    if (!description || description === url) {
+      description = '';
+    }
     return { type: 'add_link', url, query: description };
   }
 
@@ -400,15 +405,20 @@ async function addBookmark(supabase: any, userId: string, url: string, descripti
     const urlObj = new URL(url);
     
     // Check if bookmark already exists
-    const { data: existing } = await supabase
+    const { data: existing, error: existingError } = await supabase
       .from('bookmarks')
       .select('title, url')
       .eq('user_id', userId)
       .eq('url', url)
       .maybeSingle();
 
+    if (existingError) {
+      console.error('Error checking existing bookmark:', existingError);
+    }
+
     if (existing) {
-      return `📌 *You already have this bookmark!*\n\n${existing.title}\n${existing.url}`;
+      console.log(`⚠️ Duplicate bookmark detected: ${existing.url}`);
+      return `⚠️ *Bookmark already exists!*\n\n${existing.title}\n${existing.url}`;
     }
 
     // Fetch metadata using Perplexity API
