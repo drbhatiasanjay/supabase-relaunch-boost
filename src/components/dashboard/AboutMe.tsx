@@ -116,48 +116,67 @@ export const AboutMe = () => {
                 </p>
               </div>
 
-              {/* Main Interests - Third (top 3) */}
+              {/* Knowledge Graph - Interests and Topics Connected */}
               <div className="space-y-2">
                 <h3 className="text-base font-semibold flex items-center gap-2">
-                  🎯 Main Interests
+                  🧠 Knowledge Graph
                 </h3>
-                <div className="relative bg-gradient-to-br from-primary/5 to-transparent p-4 rounded-lg border border-primary/10">
-                  <div className="flex flex-wrap justify-center gap-3 items-center">
+                <div className="relative bg-gradient-to-br from-primary/5 via-secondary/5 to-transparent p-6 rounded-lg border border-primary/10 min-h-[200px]">
+                  {/* SVG for connection lines */}
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 0 }}>
+                    {/* Lines connecting interests to topics */}
+                    {analysis.interests.slice(0, 3).map((_, interestIdx) =>
+                      analysis.topics.slice(0, 3).map((_, topicIdx) => {
+                        const startX = 30 + (interestIdx * 120);
+                        const startY = 40;
+                        const endX = 30 + (topicIdx * 120);
+                        const endY = 140;
+                        return (
+                          <line
+                            key={`${interestIdx}-${topicIdx}`}
+                            x1={startX}
+                            y1={startY}
+                            x2={endX}
+                            y2={endY}
+                            stroke="hsl(var(--primary) / 0.2)"
+                            strokeWidth="1"
+                            strokeDasharray="2,2"
+                          />
+                        );
+                      })
+                    )}
+                  </svg>
+
+                  {/* Interest Nodes (Top Row) */}
+                  <div className="relative flex justify-around mb-16" style={{ zIndex: 1 }}>
                     {analysis.interests.slice(0, 3).map((interest, idx) => (
-                      <div key={idx} className="relative">
-                        {idx > 0 && (
-                          <div className="absolute -left-3 top-1/2 w-6 h-px bg-gradient-to-r from-primary/40 to-primary/20" />
-                        )}
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-primary/20 blur-sm rounded-full" />
-                          <span className="relative block text-xs text-primary font-medium bg-background px-4 py-2 rounded-full border-2 border-primary/30 shadow-sm">
-                            {interest}
-                          </span>
+                      <div key={idx} className="flex flex-col items-center">
+                        <div className="relative group">
+                          <div className="absolute inset-0 bg-primary/30 blur-md rounded-full group-hover:bg-primary/40 transition-all" />
+                          <div className="relative w-16 h-16 rounded-full bg-gradient-primary border-2 border-primary flex items-center justify-center shadow-lg">
+                            <span className="text-xl">🎯</span>
+                          </div>
                         </div>
+                        <span className="mt-2 text-xs text-primary font-medium text-center max-w-[100px] line-clamp-2">
+                          {interest}
+                        </span>
                       </div>
                     ))}
                   </div>
-                </div>
-              </div>
 
-              {/* Key Topics - Fourth (top 3) */}
-              <div className="space-y-2">
-                <h3 className="text-base font-semibold flex items-center gap-2">
-                  📚 Key Topics
-                </h3>
-                <div className="relative bg-gradient-to-br from-secondary/5 to-transparent p-4 rounded-lg border border-secondary/10">
-                  <div className="flex flex-wrap justify-center gap-3 items-center">
+                  {/* Topic Nodes (Bottom Row) */}
+                  <div className="relative flex justify-around" style={{ zIndex: 1 }}>
                     {analysis.topics.slice(0, 3).map((topic, idx) => (
-                      <div key={idx} className="relative">
-                        {idx > 0 && (
-                          <div className="absolute -left-3 top-1/2 w-6 h-px bg-gradient-to-r from-secondary/40 to-secondary/20" />
-                        )}
-                        <div className="relative">
-                          <div className="absolute inset-0 bg-secondary/20 blur-sm rounded-full" />
-                          <span className="relative block text-xs text-secondary font-medium bg-background px-4 py-2 rounded-full border-2 border-secondary/30 shadow-sm">
-                            {topic}
-                          </span>
+                      <div key={idx} className="flex flex-col items-center">
+                        <div className="relative group">
+                          <div className="absolute inset-0 bg-secondary/30 blur-md rounded-full group-hover:bg-secondary/40 transition-all" />
+                          <div className="relative w-16 h-16 rounded-full bg-secondary border-2 border-secondary/50 flex items-center justify-center shadow-lg">
+                            <span className="text-xl">📚</span>
+                          </div>
                         </div>
+                        <span className="mt-2 text-xs text-secondary font-medium text-center max-w-[100px] line-clamp-2">
+                          {topic}
+                        </span>
                       </div>
                     ))}
                   </div>
