@@ -255,10 +255,15 @@ const Dashboard = () => {
       return 0;
     });
 
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  
   const stats = {
     total: bookmarks.length,
     reading: bookmarks.filter(b => b.reading).length,
     tags: new Set(bookmarks.flatMap(b => b.tags)).size,
+    categories: new Set(bookmarks.map(b => b.category).filter(Boolean)).size,
+    thisWeek: bookmarks.filter(b => new Date(b.created_at) >= weekAgo).length,
   };
 
   const categories = ["all", ...new Set(bookmarks.map(b => b.category).filter(Boolean))] as string[];
@@ -293,11 +298,13 @@ const Dashboard = () => {
           />
         </div>
 
-        <main className={`flex-1 px-4 py-6 mx-auto w-full transition-all duration-300 ${isSidebarOpen ? 'max-w-7xl' : 'max-w-[1600px]'}`}>
+        <main className={`flex-1 px-4 sm:px-6 lg:px-8 py-6 mx-auto w-full transition-all duration-300 ${isSidebarOpen ? 'max-w-[1800px]' : 'max-w-[1800px]'}`}>
           <DashboardStats
             total={stats.total}
             reading={stats.reading}
             tags={stats.tags}
+            categories={stats.categories}
+            thisWeek={stats.thisWeek}
             selectedFilter={selectedFilter}
             onFilterChange={setSelectedFilter}
           />
