@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Bookmark, Sparkles, Phone } from "lucide-react";
+import { Bookmark, Sparkles, Phone, Link, Brain, MessageCircle } from "lucide-react";
 import { z } from "zod";
 
 const signupSchema = z.object({
@@ -147,6 +147,22 @@ const Auth = () => {
             <CardDescription className="text-base">
               Save, organize, and never lose track of your favorite links
             </CardDescription>
+          </div>
+          
+          {/* Feature Highlights */}
+          <div className="grid grid-cols-3 gap-3 pt-4">
+            <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-gradient-subtle border border-border/50">
+              <Brain className="w-5 h-5 text-primary" />
+              <span className="text-xs font-medium text-center">AI Personality</span>
+            </div>
+            <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-gradient-subtle border border-border/50">
+              <Link className="w-5 h-5 text-primary" />
+              <span className="text-xs font-medium text-center">Auto Fetch URL</span>
+            </div>
+            <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-gradient-subtle border border-border/50">
+              <MessageCircle className="w-5 h-5 text-primary" />
+              <span className="text-xs font-medium text-center">Telegram Bot</span>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
