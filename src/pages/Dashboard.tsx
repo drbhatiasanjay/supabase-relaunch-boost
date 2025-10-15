@@ -216,8 +216,8 @@ const Dashboard = () => {
         </div>
 
         <main className={`flex-1 px-4 sm:px-6 lg:px-8 py-6 mx-auto w-full transition-all duration-300 ${isSidebarOpen ? 'max-w-[1800px]' : 'max-w-[1800px]'}`}>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <div className="lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+            <div className="lg:col-span-3">
               <DashboardStats
                 total={stats.total}
                 reading={stats.reading}
@@ -230,8 +230,11 @@ const Dashboard = () => {
             </div>
             <div className="space-y-6">
               <AboutMe />
-              <LeaderboardCard userId={user?.id} />
             </div>
+          </div>
+
+          <div className="mb-6">
+            <LeaderboardCard userId={user?.id} />
           </div>
 
           {/* Filters and Tag Management Row */}
