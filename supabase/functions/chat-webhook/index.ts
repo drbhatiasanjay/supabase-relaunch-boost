@@ -64,8 +64,29 @@ serve(async (req) => {
       },
     });
 
-    // Parse and validate input
-    const rawBody = await req.json();
+    // Parse and validate input with better error handling
+    let rawBody;
+    try {
+      const bodyText = await req.text();
+      console.log('Raw request body:', bodyText);
+      console.log('Content-Type:', req.headers.get('content-type'));
+      
+      if (!bodyText || bodyText.trim() === '') {
+        console.error('Empty request body received');
+        return new Response(
+          JSON.stringify({ reply: "❌ Empty request received" }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+      }
+      
+      rawBody = JSON.parse(bodyText);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError instanceof Error ? parseError.message : 'Unknown');
+      return new Response(
+        JSON.stringify({ reply: "❌ Invalid JSON format in request" }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
     const validationResult = chatRequestSchema.safeParse(rawBody);
     
     if (!validationResult.success) {
