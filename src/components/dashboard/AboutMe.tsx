@@ -52,16 +52,16 @@ export const AboutMe = () => {
       >
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
-            <div className="p-1 rounded w-fit bg-primary/10 group-hover:bg-gradient-primary transition-all duration-200">
+            <div className="p-2 rounded-lg w-fit bg-gradient-primary shadow-[0_0_20px_hsl(var(--primary)/0.5)] group-hover:shadow-[0_0_30px_hsl(var(--primary)/0.7)] transition-all duration-200">
               <Sparkles 
-                className="w-4 h-4 text-primary group-hover:text-white animate-pulse" 
+                className="w-4 h-4 text-white animate-pulse" 
                 style={{ 
-                  filter: 'drop-shadow(0 0 6px hsl(var(--primary-glow) / 0.8))'
+                  filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.8))'
                 }}
               />
             </div>
           </div>
-          <p className="text-xs text-muted-foreground font-medium leading-tight">About Me</p>
+          <p className="text-xs text-muted-foreground font-bold leading-tight">About Me</p>
         </div>
       </Card>
 
