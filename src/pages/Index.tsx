@@ -131,6 +131,12 @@ const Index = () => {
           </div>
         </div>
       </main>
+
+      <footer className="relative z-10 py-6 text-center">
+        <p className="text-xs text-muted-foreground">
+          Build v{new Date().toISOString().replace('T', ' ').substring(0, 19)} UTC
+        </p>
+      </footer>
     </div>
   );
 };
