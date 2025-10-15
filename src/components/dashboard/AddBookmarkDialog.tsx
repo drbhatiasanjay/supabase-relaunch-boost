@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
+import { X, Sparkles } from "lucide-react";
 
 const bookmarkSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -203,31 +203,31 @@ export const AddBookmarkDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[92vw] sm:max-w-[520px] max-h-[85vh] p-4 md:p-5">
         <DialogHeader>
-          <DialogTitle>Add New Bookmark</DialogTitle>
-          <DialogDescription>
-            Save a link to your collection. Add tags to organize better.
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle>Add New Bookmark</DialogTitle>
+              <DialogDescription>
+                Save a link to your collection. Add tags to organize better.
+              </DialogDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className={`h-8 w-8 ${autoFetch ? 'text-primary' : 'text-muted-foreground'}`}
+                onClick={() => setAutoFetch(!autoFetch)}
+                disabled={loading || fetching}
+                title={autoFetch ? "Auto-fetch enabled" : "Auto-fetch disabled"}
+              >
+                <Sparkles className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="max-h-[70vh] overflow-y-auto pr-1">
           <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="flex items-center justify-between p-2.5 rounded-lg bg-muted/50 border">
-            <div>
-              <Label htmlFor="auto-fetch" className="text-sm font-medium cursor-pointer">
-                Auto-fetch metadata
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Automatically extract title and description from URL
-              </p>
-            </div>
-            <Switch
-              id="auto-fetch"
-              checked={autoFetch}
-              onCheckedChange={setAutoFetch}
-              disabled={loading || fetching}
-            />
-          </div>
-
           <div className="space-y-1.5">
             <Label htmlFor="url">URL *</Label>
             <Input
@@ -304,7 +304,7 @@ export const AddBookmarkDialog = ({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={loading}
-              rows={2}
+              rows={1}
               maxLength={500}
               className="resize-none"
             />
