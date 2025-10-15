@@ -54,15 +54,15 @@ serve(async (req) => {
   }
 
   try {
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-const supabase = createClient(supabaseUrl, supabaseKey, {
-  global: {
-    headers: {
-      Authorization: req.headers.get('Authorization') ?? '',
-    },
-  },
-});
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      global: {
+        headers: {
+          Authorization: req.headers.get('Authorization') ?? '',
+        },
+      },
+    });
 
     // Parse and validate input
     const rawBody = await req.json();
@@ -81,28 +81,28 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
       );
     }
 
-const { message } = validationResult.data;
-console.log('Chat request received');
+    const { message } = validationResult.data;
+    console.log('Chat request received');
 
-// Authenticate via JWT and use user-scoped access (no phone/telegram lookup)
-const { data: { user }, error: userError } = await supabase.auth.getUser();
-if (userError || !user) {
-  return new Response(
-    JSON.stringify({ reply: "Unauthorized" }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-  );
-}
-const userId = user.id;
-console.log('User authenticated via JWT');
+    // Authenticate via JWT and use user-scoped access (no phone/telegram lookup)
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ reply: "Unauthorized" }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    }
+    const userId = user.id;
+    console.log('User authenticated via JWT');
 
-// Rate limiting per user
-const rl = checkRateLimit(userId);
-if (!rl.allowed) {
-  return new Response(
-    JSON.stringify({ reply: "Too many requests. Please slow down." }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
-  );
-}
+    // Rate limiting per user
+    const rl = checkRateLimit(userId);
+    if (!rl.allowed) {
+      return new Response(
+        JSON.stringify({ reply: "Too many requests. Please slow down." }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
+      );
+    }
 
     // 2. Parse intent
     const intent = parseIntent(message);
