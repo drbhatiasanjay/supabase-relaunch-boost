@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Badge } from "@/components/ui/badge";
-import { X, Sparkles } from "lucide-react";
+import { X, Zap } from "lucide-react";
 
 const bookmarkSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -220,7 +220,7 @@ export const AddBookmarkDialog = ({
                 disabled={loading || fetching}
                 title={autoFetch ? "Auto-fetch enabled" : "Auto-fetch disabled"}
               >
-                <Sparkles className="h-4 w-4" />
+                <Zap className="h-4 w-4" />
               </Button>
             </div>
           </div>
