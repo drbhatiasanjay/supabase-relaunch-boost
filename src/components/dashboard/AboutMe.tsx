@@ -1,8 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
-import { Sparkles, Mail, Calendar, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Sparkles, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,10 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
-interface Profile {
-  email: string;
-  created_at: string;
-}
 
 interface PersonalityAnalysis {
   interests: string[];
@@ -25,29 +20,9 @@ interface PersonalityAnalysis {
 }
 
 export const AboutMe = () => {
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [analysis, setAnalysis] = useState<PersonalityAnalysis | null>(null);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('email, created_at')
-          .eq('user_id', user.id)
-          .single();
-        
-        if (data) {
-          setProfile(data);
-        }
-      }
-    };
-
-    fetchProfile();
-  }, []);
 
   const handleAnalyzeClick = async () => {
     setIsDialogOpen(true);
@@ -69,58 +44,22 @@ export const AboutMe = () => {
     }
   };
 
-  if (!profile) return null;
-
-  const initials = profile.email.substring(0, 2).toUpperCase();
-  const joinDate = new Date(profile.created_at).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric'
-  });
-
   return (
     <>
       <Card 
-        className="relative overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-glow group"
-        style={{
-          background: 'linear-gradient(135deg, hsl(282 89% 66% / 0.1) 0%, hsl(258 89% 66% / 0.1) 100%)',
-          borderColor: 'hsl(var(--primary) / 0.3)',
-        }}
+        className="cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-glow group p-6"
         onClick={handleAnalyzeClick}
       >
-        <div className="absolute inset-0 bg-gradient-hero opacity-5" />
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 relative z-10">
-            <Sparkles className="w-5 h-5 text-primary animate-pulse" 
-              style={{ 
-                filter: 'drop-shadow(0 0 8px hsl(var(--primary-glow) / 0.6))',
-                animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-              }}
-            />
-            About Me
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4 relative z-10">
-          <div className="flex items-center gap-4">
-            <Avatar className="w-16 h-16 border-2 border-primary/30">
-              <AvatarFallback className="text-lg bg-gradient-primary text-primary-foreground">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Mail className="w-4 h-4" />
-                {profile.email}
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                <Calendar className="w-4 h-4" />
-                Joined {joinDate}
-              </div>
-            </div>
-          </div>
-          <div className="text-xs text-center text-muted-foreground pt-2 border-t border-primary/20 group-hover:text-primary transition-colors">
-            Click to discover your personality insights ✨
-          </div>
-        </CardContent>
+        <div className="flex flex-col items-center justify-center text-center space-y-2">
+          <Sparkles 
+            className="w-8 h-8 text-primary animate-pulse mb-2" 
+            style={{ 
+              filter: 'drop-shadow(0 0 8px hsl(var(--primary-glow) / 0.6))',
+              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+            }}
+          />
+          <p className="text-2xl font-semibold">About Me</p>
+        </div>
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
