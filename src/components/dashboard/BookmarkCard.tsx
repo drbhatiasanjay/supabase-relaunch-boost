@@ -9,13 +9,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ExternalLink, MoreVertical, Trash2, BookMarked, Bookmark as BookmarkIcon, Clock } from "lucide-react";
+import { ExternalLink, MoreVertical, Trash2, BookMarked, Bookmark as BookmarkIcon, Clock, CheckCheck } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface BookmarkCardProps {
   bookmark: Bookmark;
   onDelete: (id: string) => void;
   onToggleReading: (id: string, currentStatus: boolean) => void;
+  onToggleRead: (id: string, currentStatus: boolean) => void;
   isSelected?: boolean;
   onToggleSelection?: (id: string) => void;
 }
@@ -24,6 +25,7 @@ export const BookmarkCard = ({
   bookmark, 
   onDelete, 
   onToggleReading,
+  onToggleRead,
   isSelected,
   onToggleSelection
 }: BookmarkCardProps) => {
@@ -96,6 +98,12 @@ export const BookmarkCard = ({
                   </>
                 )}
               </DropdownMenuItem>
+              {bookmark.reading && (
+                <DropdownMenuItem onClick={() => onToggleRead(bookmark.id, bookmark.read)}>
+                  <CheckCheck className="w-4 h-4 mr-2" />
+                  {bookmark.read ? "Mark as Unread" : "Mark as Read"}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onClick={() => onDelete(bookmark.id)}
                 className="text-destructive focus:text-destructive"
@@ -117,9 +125,21 @@ export const BookmarkCard = ({
         {(bookmark.reading || bookmark.tags.length > 0) && (
           <div className="flex flex-wrap gap-1.5 items-center pl-5">
             {bookmark.reading && (
-              <Badge variant="secondary" className="bg-secondary/20 text-secondary border-secondary/30 h-5 text-xs px-1.5">
-                <BookMarked className="w-3 h-3 mr-0.5" />
-                Reading
+              <Badge 
+                variant="secondary" 
+                className={`${bookmark.read ? 'bg-success/20 text-success border-success/30' : 'bg-secondary/20 text-secondary border-secondary/30'} h-5 text-xs px-1.5`}
+              >
+                {bookmark.read ? (
+                  <>
+                    <CheckCheck className="w-3 h-3 mr-0.5" />
+                    Read
+                  </>
+                ) : (
+                  <>
+                    <BookMarked className="w-3 h-3 mr-0.5" />
+                    Reading
+                  </>
+                )}
               </Badge>
             )}
             {bookmark.tags.slice(0, 3).map((tag) => (

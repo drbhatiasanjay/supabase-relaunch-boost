@@ -16,7 +16,7 @@ export const useBookmarks = (userId: string | undefined, selectedFolderId: strin
       // Optimized query: select only needed columns, use indexed columns
       let query = supabase
         .from("bookmarks")
-        .select("id, title, url, description, tags, reading, category, folder_id, created_at, updated_at")
+        .select("id, title, url, description, tags, reading, read, category, folder_id, created_at, updated_at")
         .eq("user_id", userId);
 
       if (selectedFolderId) {
@@ -95,6 +95,42 @@ export const useBookmarks = (userId: string | undefined, selectedFolderId: strin
     },
   });
 
+  const toggleRead = useMutation({
+    mutationFn: async ({ id, currentStatus }: { id: string; currentStatus: boolean }) => {
+      const startTime = performance.now();
+      const { error } = await supabase
+        .from("bookmarks")
+        .update({ read: !currentStatus })
+        .eq("id", id);
+
+      const duration = performance.now() - startTime;
+      console.log(`✅ Toggle read completed in ${duration.toFixed(2)}ms`);
+
+      if (error) throw error;
+      return { id, newStatus: !currentStatus };
+    },
+    onMutate: async ({ id, currentStatus }) => {
+      await queryClient.cancelQueries({ queryKey: ["bookmarks"] });
+      const previousBookmarks = queryClient.getQueryData(["bookmarks", userId, selectedFolderId]);
+
+      queryClient.setQueryData(["bookmarks", userId, selectedFolderId], (old: Bookmark[] | undefined) =>
+        old?.map((b) => (b.id === id ? { ...b, read: !currentStatus } : b))
+      );
+
+      return { previousBookmarks };
+    },
+    onSuccess: (_, { currentStatus }) => {
+      toast.success(!currentStatus ? "Marked as read" : "Marked as unread");
+    },
+    onError: (_, __, context) => {
+      queryClient.setQueryData(["bookmarks", userId, selectedFolderId], context?.previousBookmarks);
+      toast.error("Failed to update bookmark");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
+    },
+  });
+
   const bulkDelete = useMutation({
     mutationFn: async (ids: string[]) => {
       const startTime = performance.now();
@@ -146,6 +182,7 @@ export const useBookmarks = (userId: string | undefined, selectedFolderId: strin
     isLoading: bookmarksQuery.isLoading,
     deleteBookmark,
     toggleReading,
+    toggleRead,
     bulkDelete,
     bulkMoveToFolder,
     refetch: bookmarksQuery.refetch,

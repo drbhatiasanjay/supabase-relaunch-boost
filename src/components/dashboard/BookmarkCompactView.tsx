@@ -7,18 +7,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ExternalLink, MoreVertical, Trash2, BookMarked, Bookmark as BookmarkIcon } from "lucide-react";
+import { ExternalLink, MoreVertical, Trash2, BookMarked, Bookmark as BookmarkIcon, CheckCheck } from "lucide-react";
 
 interface BookmarkCompactViewProps {
   bookmarks: Bookmark[];
   onDelete: (id: string) => void;
   onToggleReading: (id: string, currentStatus: boolean) => void;
+  onToggleRead: (id: string, currentStatus: boolean) => void;
 }
 
 export const BookmarkCompactView = ({
   bookmarks,
   onDelete,
   onToggleReading,
+  onToggleRead,
 }: BookmarkCompactViewProps) => {
   const getDomain = (url: string) => {
     try {
@@ -37,7 +39,11 @@ export const BookmarkCompactView = ({
         >
           <div className="flex items-center gap-3">
             {bookmark.reading && (
-              <BookMarked className="w-4 h-4 text-secondary flex-shrink-0" />
+              bookmark.read ? (
+                <CheckCheck className="w-4 h-4 text-success flex-shrink-0" />
+              ) : (
+                <BookMarked className="w-4 h-4 text-secondary flex-shrink-0" />
+              )
             )}
             
             <a
@@ -87,6 +93,12 @@ export const BookmarkCompactView = ({
                       </>
                     )}
                   </DropdownMenuItem>
+                  {bookmark.reading && (
+                    <DropdownMenuItem onClick={() => onToggleRead(bookmark.id, bookmark.read)}>
+                      <CheckCheck className="w-4 h-4 mr-2" />
+                      {bookmark.read ? "Mark as Unread" : "Mark as Read"}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem
                     onClick={() => onDelete(bookmark.id)}
                     className="text-destructive focus:text-destructive"

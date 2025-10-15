@@ -34,6 +34,7 @@ export interface Bookmark {
   description?: string;
   tags: string[];
   reading: boolean;
+  read: boolean;
   category?: string;
   folder_id?: string | null;
   created_at: string;
@@ -59,7 +60,7 @@ const Dashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Use optimized hooks with React Query caching
-  const { bookmarks, isLoading, deleteBookmark, toggleReading, bulkDelete, bulkMoveToFolder, refetch } = 
+  const { bookmarks, isLoading, deleteBookmark, toggleReading, toggleRead, bulkDelete, bulkMoveToFolder, refetch } = 
     useBookmarks(user?.id, selectedFolderId);
   const { data: folders = [] } = useFolders(user?.id);
 
@@ -114,6 +115,10 @@ const Dashboard = () => {
 
   const handleToggleReading = async (id: string, currentStatus: boolean) => {
     toggleReading.mutate({ id, currentStatus });
+  };
+
+  const handleToggleRead = async (id: string, currentStatus: boolean) => {
+    toggleRead.mutate({ id, currentStatus });
   };
 
   const handleBulkDelete = async () => {
@@ -283,18 +288,26 @@ const Dashboard = () => {
 
             <BookmarkletGuide />
 
-            <div className="ml-auto text-sm text-muted-foreground flex items-center whitespace-nowrap">
-              {filteredBookmarks.length} bookmark{filteredBookmarks.length !== 1 ? 's' : ''}
+            <div className="ml-auto text-sm text-muted-foreground flex items-center gap-4 whitespace-nowrap">
+              {selectedFilter === "reading" && (
+                <span className="font-medium">
+                  {stats.reading}/{filteredBookmarks.filter(b => b.reading && b.read).length} Read
+                </span>
+              )}
+              <span>
+                {filteredBookmarks.length} bookmark{filteredBookmarks.length !== 1 ? 's' : ''}
+              </span>
             </div>
           </div>
 
           {/* View Modes */}
-          {viewMode === "grid" && (
+           {viewMode === "grid" && (
             <BookmarkGrid
               bookmarks={filteredBookmarks}
               loading={isLoading}
               onDelete={handleDeleteBookmark}
               onToggleReading={handleToggleReading}
+              onToggleRead={handleToggleRead}
               onRefresh={refetch}
               selectedBookmarks={selectedBookmarks}
               onToggleSelection={toggleBookmarkSelection}
@@ -306,6 +319,7 @@ const Dashboard = () => {
               bookmarks={filteredBookmarks}
               onDelete={handleDeleteBookmark}
               onToggleReading={handleToggleReading}
+              onToggleRead={handleToggleRead}
             />
           )}
           
@@ -314,6 +328,7 @@ const Dashboard = () => {
               bookmarks={filteredBookmarks}
               onDelete={handleDeleteBookmark}
               onToggleReading={handleToggleReading}
+              onToggleRead={handleToggleRead}
             />
           )}
 
