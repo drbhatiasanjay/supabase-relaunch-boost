@@ -41,7 +41,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Extract the title and a brief description (max 150 chars) from the given URL. Return ONLY a JSON object with "title" and "description" fields. Be concise.'
+            content: 'Extract metadata from the given URL. Return ONLY a JSON object with "title" (string), "description" (string, max 150 chars), and "tags" (array of 2-4 relevant topic keywords). Be concise and accurate.'
           },
           {
             role: 'user',
@@ -99,7 +99,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         title: metadata.title || "",
-        description: metadata.description || ""
+        description: metadata.description || "",
+        tags: Array.isArray(metadata.tags) ? metadata.tags : []
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

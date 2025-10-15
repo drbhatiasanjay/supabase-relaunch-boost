@@ -121,6 +121,9 @@ export const AddBookmarkDialog = ({
 
       if (data?.title) setTitle(data.title);
       if (data?.description) setDescription(data.description);
+      if (data?.tags && Array.isArray(data.tags)) {
+        setTags(data.tags.filter((tag: string) => tag && tag.trim()));
+      }
       
       toast.success("Metadata fetched successfully!");
     } catch (err) {
