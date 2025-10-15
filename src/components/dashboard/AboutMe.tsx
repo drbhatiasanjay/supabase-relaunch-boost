@@ -52,10 +52,10 @@ export const AboutMe = () => {
   return (
     <>
       <Card 
-        className="glass-card p-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-glow group ring-2 ring-primary/40 hover:ring-primary/60"
+        className="glass-card p-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-glow group ring-2 ring-primary/40 hover:ring-primary/60 h-full"
         onClick={handleAnalyzeClick}
       >
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-1.5 h-full justify-between">
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-lg w-fit bg-gradient-primary shadow-[0_0_20px_hsl(var(--primary)/0.5)] group-hover:shadow-[0_0_30px_hsl(var(--primary)/0.7)] transition-all duration-200">
               <Sparkles 
