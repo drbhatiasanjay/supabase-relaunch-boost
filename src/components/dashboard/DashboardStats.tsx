@@ -1,6 +1,5 @@
 import { BookMarked, Bookmark, Tag, FolderOpen, TrendingUp, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { AboutMe } from "./AboutMe";
 
 interface DashboardStatsProps {
   total: number;
@@ -22,7 +21,7 @@ export const DashboardStats = ({
   onFilterChange,
 }: DashboardStatsProps) => {
   return (
-    <div className="grid grid-cols-6 gap-3 mb-4 max-w-full">
+    <div className="grid grid-cols-4 gap-3 mb-4 max-w-full">
       <Card
         className={`glass-card p-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.02] group ${
           selectedFilter === "all" ? "ring-1 ring-primary shadow-glow" : "hover:shadow-md"
@@ -65,43 +64,40 @@ export const DashboardStats = ({
         </div>
       </Card>
 
-      <Card className="glass-card p-2.5 transition-all duration-200 hover:scale-[1.02] hover:shadow-md group">
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <div className="p-1 rounded w-fit bg-warning/10 group-hover:bg-warning transition-all duration-200">
-              <Tag className="w-2.5 h-2.5 text-warning group-hover:text-white" />
+      {/* Combined Stats Card */}
+      <Card className="glass-card p-2.5 transition-all duration-200 hover:shadow-md col-span-2">
+        <div className="grid grid-cols-3 gap-3 h-full">
+          <div className="flex flex-col gap-1.5 justify-center">
+            <div className="flex items-center gap-2">
+              <div className="p-1 rounded w-fit bg-warning/10 group-hover:bg-warning transition-all duration-200">
+                <Tag className="w-2.5 h-2.5 text-warning" />
+              </div>
+              <p className="text-lg font-bold tracking-tight">{tags}</p>
             </div>
-            <p className="text-lg font-bold tracking-tight">{tags}</p>
+            <p className="text-xs text-muted-foreground font-medium leading-tight">Unique Tags</p>
           </div>
-          <p className="text-xs text-muted-foreground font-medium leading-tight">Unique Tags</p>
+
+          <div className="flex flex-col gap-1.5 justify-center border-l border-r border-border/50 px-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1 rounded w-fit bg-accent/10 group-hover:bg-accent transition-all duration-200">
+                <FolderOpen className="w-2.5 h-2.5 text-accent" />
+              </div>
+              <p className="text-lg font-bold tracking-tight">{categories}</p>
+            </div>
+            <p className="text-xs text-muted-foreground font-medium leading-tight">Categories</p>
+          </div>
+
+          <div className="flex flex-col gap-1.5 justify-center">
+            <div className="flex items-center gap-2">
+              <div className="p-1 rounded w-fit bg-success/10 group-hover:bg-success transition-all duration-200">
+                <TrendingUp className="w-2.5 h-2.5 text-success" />
+              </div>
+              <p className="text-lg font-bold tracking-tight">{thisWeek}</p>
+            </div>
+            <p className="text-xs text-muted-foreground font-medium leading-tight">This Week</p>
+          </div>
         </div>
       </Card>
-
-      <Card className="glass-card p-2.5 transition-all duration-200 hover:scale-[1.02] hover:shadow-md group">
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <div className="p-1 rounded w-fit bg-accent/10 group-hover:bg-accent transition-all duration-200">
-              <FolderOpen className="w-2.5 h-2.5 text-accent group-hover:text-white" />
-            </div>
-            <p className="text-lg font-bold tracking-tight">{categories}</p>
-          </div>
-          <p className="text-xs text-muted-foreground font-medium leading-tight">Categories</p>
-        </div>
-      </Card>
-
-      <Card className="glass-card p-2.5 transition-all duration-200 hover:scale-[1.02] hover:shadow-md group">
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <div className="p-1 rounded w-fit bg-success/10 group-hover:bg-success transition-all duration-200">
-              <TrendingUp className="w-2.5 h-2.5 text-success group-hover:text-white" />
-            </div>
-            <p className="text-lg font-bold tracking-tight">{thisWeek}</p>
-          </div>
-          <p className="text-xs text-muted-foreground font-medium leading-tight">This Week</p>
-        </div>
-      </Card>
-
-      <AboutMe />
     </div>
   );
 };
