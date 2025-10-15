@@ -386,6 +386,18 @@ async function addBookmark(supabase: any, userId: string, url: string, descripti
     const urlObj = new URL(url);
     const title = description || urlObj.hostname;
 
+    // Check if bookmark already exists
+    const { data: existing } = await supabase
+      .from('bookmarks')
+      .select('title, url')
+      .eq('user_id', userId)
+      .eq('url', url)
+      .maybeSingle();
+
+    if (existing) {
+      return `📌 *You already have this bookmark!*\n\n${existing.title}\n${existing.url}`;
+    }
+
     const { error } = await supabase
       .from('bookmarks')
       .insert({
