@@ -47,16 +47,16 @@ export const AboutMe = () => {
   return (
     <>
       <Card 
-        className="glass-card p-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-md group"
+        className="glass-card p-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-glow group ring-2 ring-primary/40 hover:ring-primary/60"
         onClick={handleAnalyzeClick}
       >
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2">
             <div className="p-1 rounded w-fit bg-primary/10 group-hover:bg-gradient-primary transition-all duration-200">
               <Sparkles 
-                className="w-2.5 h-2.5 text-primary group-hover:text-white" 
+                className="w-4 h-4 text-primary group-hover:text-white animate-pulse" 
                 style={{ 
-                  filter: 'drop-shadow(0 0 4px hsl(var(--primary-glow) / 0.6))'
+                  filter: 'drop-shadow(0 0 6px hsl(var(--primary-glow) / 0.8))'
                 }}
               />
             </div>
