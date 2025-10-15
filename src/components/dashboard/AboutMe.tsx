@@ -26,8 +26,13 @@ export const AboutMe = () => {
 
   const handleAnalyzeClick = async () => {
     setIsDialogOpen(true);
+    
+    // If we already have cached analysis, just show it
+    if (analysis) {
+      return;
+    }
+
     setIsLoading(true);
-    setAnalysis(null);
 
     try {
       const { data, error } = await supabase.functions.invoke('analyze-personality');
@@ -78,18 +83,46 @@ export const AboutMe = () => {
           </DialogHeader>
 
           {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <Loader2 className="w-12 h-12 animate-spin text-primary" />
-              <p className="text-muted-foreground">Analyzing your bookmarks...</p>
+            <div className="flex flex-col items-center justify-center py-8 space-y-3">
+              <Loader2 className="w-10 h-10 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Analyzing your bookmarks...</p>
             </div>
           ) : analysis ? (
-            <div className="space-y-6 py-4">
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
+            <div className="space-y-4 py-3">
+              {/* Personality Traits - First */}
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold flex items-center gap-2">
+                  ✨ Personality Traits
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {analysis.personalityTraits.map((trait, idx) => (
+                    <span
+                      key={idx}
+                      className="px-3 py-1.5 rounded-full bg-accent/10 text-accent text-sm border border-accent/20"
+                    >
+                      {trait}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Reading Patterns - Second */}
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold flex items-center gap-2">
+                  📖 Reading Patterns
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed bg-muted/50 p-3 rounded-lg">
+                  {analysis.readingPatterns}
+                </p>
+              </div>
+
+              {/* Main Interests - Third (top 3) */}
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold flex items-center gap-2">
                   🎯 Main Interests
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {analysis.interests.map((interest, idx) => (
+                  {analysis.interests.slice(0, 3).map((interest, idx) => (
                     <span
                       key={idx}
                       className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm border border-primary/20"
@@ -100,43 +133,19 @@ export const AboutMe = () => {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
+              {/* Key Topics - Fourth (top 3) */}
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold flex items-center gap-2">
                   📚 Key Topics
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {analysis.topics.map((topic, idx) => (
+                  {analysis.topics.slice(0, 3).map((topic, idx) => (
                     <span
                       key={idx}
                       className="px-3 py-1.5 rounded-full bg-secondary/10 text-secondary text-sm border border-secondary/20"
                     >
                       {topic}
                     </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  📖 Reading Patterns
-                </h3>
-                <p className="text-muted-foreground leading-relaxed bg-muted/50 p-4 rounded-lg">
-                  {analysis.readingPatterns}
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  ✨ Personality Traits
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {analysis.personalityTraits.map((trait, idx) => (
-                    <div
-                      key={idx}
-                      className="px-4 py-3 rounded-lg bg-accent/10 text-accent border border-accent/20"
-                    >
-                      {trait}
-                    </div>
                   ))}
                 </div>
               </div>
