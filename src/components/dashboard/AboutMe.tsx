@@ -56,11 +56,11 @@ export const AboutMe = () => {
         onClick={handleAnalyzeClick}
       >
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg w-fit bg-gradient-primary shadow-[0_0_20px_hsl(var(--primary)/0.5)] group-hover:shadow-[0_0_30px_hsl(var(--primary)/0.7)] transition-all duration-200">
+          <div className="p-1 rounded w-fit bg-gradient-primary shadow-[0_0_15px_hsl(var(--primary)/0.5)] group-hover:shadow-[0_0_20px_hsl(var(--primary)/0.7)] transition-all duration-200">
             <Sparkles 
-              className="w-4 h-4 text-white animate-pulse" 
+              className="w-2.5 h-2.5 text-white animate-pulse" 
               style={{ 
-                filter: 'drop-shadow(0 0 8px rgba(255,255,255,0.8))'
+                filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.8))'
               }}
             />
           </div>
