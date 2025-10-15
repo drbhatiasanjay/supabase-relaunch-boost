@@ -67,7 +67,7 @@ export const DashboardStats = ({
       {/* Combined Stats Card */}
       <Card className="glass-card p-2.5 transition-all duration-200 hover:shadow-md col-span-2">
         <div className="grid grid-cols-3 gap-3 h-full">
-          <div className="flex flex-col gap-1.5 justify-center">
+          <div className="flex flex-col gap-1.5 justify-center bg-muted/30 rounded-lg p-2.5 border border-foreground/10">
             <div className="flex items-center gap-2">
               <div className="p-1 rounded w-fit bg-warning/10 group-hover:bg-warning transition-all duration-200">
                 <Tag className="w-2.5 h-2.5 text-warning" />
@@ -77,7 +77,7 @@ export const DashboardStats = ({
             <p className="text-xs text-muted-foreground font-medium leading-tight">Unique Tags</p>
           </div>
 
-          <div className="flex flex-col gap-1.5 justify-center border-l border-r border-border/50 px-3">
+          <div className="flex flex-col gap-1.5 justify-center bg-muted/30 rounded-lg p-2.5 border border-foreground/10">
             <div className="flex items-center gap-2">
               <div className="p-1 rounded w-fit bg-accent/10 group-hover:bg-accent transition-all duration-200">
                 <FolderOpen className="w-2.5 h-2.5 text-accent" />
@@ -87,7 +87,7 @@ export const DashboardStats = ({
             <p className="text-xs text-muted-foreground font-medium leading-tight">Categories</p>
           </div>
 
-          <div className="flex flex-col gap-1.5 justify-center">
+          <div className="flex flex-col gap-1.5 justify-center bg-muted/30 rounded-lg p-2.5 border border-foreground/10">
             <div className="flex items-center gap-2">
               <div className="p-1 rounded w-fit bg-success/10 group-hover:bg-success transition-all duration-200">
                 <TrendingUp className="w-2.5 h-2.5 text-success" />
