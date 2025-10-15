@@ -87,22 +87,36 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
-    const validationResult = chatRequestSchema.safeParse(rawBody);
-    
-    if (!validationResult.success) {
-      console.log('Validation failed:', validationResult.error.errors[0].message);
-      return new Response(
-        JSON.stringify({ 
-          reply: `❌ Invalid request: ${validationResult.error.errors[0].message}` 
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200 
-        }
-      );
+
+    // Check if this is a Telegram webhook format
+    let chatRequest: ChatRequest;
+    if (rawBody.message && typeof rawBody.message === 'object' && rawBody.message.text) {
+      // Telegram webhook format: { update_id, message: { text, from: { id }, chat: {...} } }
+      console.log('Detected Telegram webhook format');
+      chatRequest = {
+        message: rawBody.message.text,
+        telegram_id: String(rawBody.message.from?.id || rawBody.message.chat?.id)
+      };
+    } else {
+      // Standard format: { message, phone?, telegram_id? }
+      const validationResult = chatRequestSchema.safeParse(rawBody);
+      
+      if (!validationResult.success) {
+        console.log('Validation failed:', validationResult.error.errors[0].message);
+        return new Response(
+          JSON.stringify({ 
+            reply: `❌ Invalid request: ${validationResult.error.errors[0].message}` 
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200 
+          }
+        );
+      }
+      chatRequest = validationResult.data;
     }
 
-    const { message, phone, telegram_id } = validationResult.data;
+    const { message, phone, telegram_id } = chatRequest;
     console.log('Chat request received');
 
     // Use service role to map phone/telegram_id to user
