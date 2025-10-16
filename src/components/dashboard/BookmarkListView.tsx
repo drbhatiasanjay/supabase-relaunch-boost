@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ExternalLink, MoreVertical, Trash2, BookMarked, Bookmark as BookmarkIcon, CheckCheck } from "lucide-react";
+import { ExternalLink, MoreVertical, Trash2, BookMarked, Bookmark as BookmarkIcon, CheckCheck, Edit } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface BookmarkListViewProps {
@@ -15,6 +15,7 @@ interface BookmarkListViewProps {
   onDelete: (id: string) => void;
   onToggleReading: (id: string, currentStatus: boolean) => void;
   onToggleRead: (id: string, currentStatus: boolean) => void;
+  onEdit: (bookmark: Bookmark) => void;
 }
 
 export const BookmarkListView = ({
@@ -22,6 +23,7 @@ export const BookmarkListView = ({
   onDelete,
   onToggleReading,
   onToggleRead,
+  onEdit,
 }: BookmarkListViewProps) => {
   const getDomain = (url: string) => {
     try {
@@ -67,6 +69,10 @@ export const BookmarkListView = ({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onEdit(bookmark)}>
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onToggleReading(bookmark.id, bookmark.reading)}>
                       {bookmark.reading ? (
                         <>

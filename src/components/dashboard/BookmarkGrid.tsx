@@ -9,6 +9,7 @@ interface BookmarkGridProps {
   onDelete: (id: string) => void;
   onToggleReading: (id: string, currentStatus: boolean) => void;
   onToggleRead: (id: string, currentStatus: boolean) => void;
+  onEdit: (bookmark: Bookmark) => void;
   onRefresh: () => void;
   selectedBookmarks?: Set<string>;
   onToggleSelection?: (id: string) => void;
@@ -20,6 +21,7 @@ export const BookmarkGrid = ({
   onDelete,
   onToggleReading,
   onToggleRead,
+  onEdit,
   onRefresh,
   selectedBookmarks,
   onToggleSelection,
@@ -75,6 +77,7 @@ export const BookmarkGrid = ({
               onDelete={onDelete}
               onToggleReading={onToggleReading}
               onToggleRead={onToggleRead}
+              onEdit={onEdit}
               isSelected={selectedBookmarks?.has(bookmark.id)}
               onToggleSelection={onToggleSelection}
             />

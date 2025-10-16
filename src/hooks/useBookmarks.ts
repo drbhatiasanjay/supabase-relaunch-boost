@@ -177,6 +177,28 @@ export const useBookmarks = (userId: string | undefined, selectedFolderId: strin
     },
   });
 
+  const updateBookmark = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Bookmark> }) => {
+      const startTime = performance.now();
+      const { error } = await supabase
+        .from("bookmarks")
+        .update(data)
+        .eq("id", id);
+
+      const duration = performance.now() - startTime;
+      console.log(`✅ Update bookmark completed in ${duration.toFixed(2)}ms`);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
+      toast.success("Bookmark updated successfully");
+    },
+    onError: () => {
+      toast.error("Failed to update bookmark");
+    },
+  });
+
   return {
     bookmarks: bookmarksQuery.data || [],
     isLoading: bookmarksQuery.isLoading,
@@ -185,6 +207,7 @@ export const useBookmarks = (userId: string | undefined, selectedFolderId: strin
     toggleRead,
     bulkDelete,
     bulkMoveToFolder,
+    updateBookmark,
     refetch: bookmarksQuery.refetch,
   };
 };

@@ -34,6 +34,15 @@ interface AddBookmarkDialogProps {
     description?: string;
   };
   folderId?: string | null;
+  editMode?: boolean;
+  bookmarkId?: string;
+  existingData?: {
+    title: string;
+    url: string;
+    description?: string;
+    tags: string[];
+    reading: boolean;
+  };
 }
 
 export const AddBookmarkDialog = ({ 
@@ -41,7 +50,10 @@ export const AddBookmarkDialog = ({
   onOpenChange, 
   onSuccess, 
   prefillData,
-  folderId 
+  folderId,
+  editMode = false,
+  bookmarkId,
+  existingData,
 }: AddBookmarkDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
@@ -57,7 +69,13 @@ export const AddBookmarkDialog = ({
   useEffect(() => {
     if (open) {
       // Reset form when dialog opens
-      if (prefillData) {
+      if (editMode && existingData) {
+        setUrl(existingData.url);
+        setTitle(existingData.title);
+        setDescription(existingData.description || "");
+        setTags(existingData.tags);
+        setReading(existingData.reading);
+      } else if (prefillData) {
         setUrl(prefillData.url || "");
         setTitle(prefillData.title || "");
         setDescription(prefillData.description || "");
@@ -66,7 +84,7 @@ export const AddBookmarkDialog = ({
       }
       fetchAvailableTags();
     }
-  }, [open, prefillData]);
+  }, [open, prefillData, editMode, existingData]);
 
   const fetchAvailableTags = async () => {
     try {
@@ -169,21 +187,39 @@ export const AddBookmarkDialog = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.from("bookmarks").insert({
-        user_id: user.id,
-        title: validated.title,
-        url: validated.url,
-        description: validated.description || null,
-        tags,
-        reading,
-        folder_id: folderId,
-      });
+      if (editMode && bookmarkId) {
+        // Update existing bookmark
+        const { error } = await supabase.from("bookmarks").update({
+          title: validated.title,
+          url: validated.url,
+          description: validated.description || null,
+          tags,
+          reading,
+        }).eq("id", bookmarkId);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast.success("Bookmark saved!", {
-        description: "Your bookmark has been added to your collection.",
-      });
+        toast.success("Bookmark updated!", {
+          description: "Your changes have been saved successfully.",
+        });
+      } else {
+        // Insert new bookmark
+        const { error } = await supabase.from("bookmarks").insert({
+          user_id: user.id,
+          title: validated.title,
+          url: validated.url,
+          description: validated.description || null,
+          tags,
+          reading,
+          folder_id: folderId,
+        });
+
+        if (error) throw error;
+
+        toast.success("Bookmark saved!", {
+          description: "Your bookmark has been added to your collection.",
+        });
+      }
 
       resetForm();
       onOpenChange(false);
@@ -205,9 +241,9 @@ export const AddBookmarkDialog = ({
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle>Add New Bookmark</DialogTitle>
+              <DialogTitle>{editMode ? "Edit Bookmark" : "Add New Bookmark"}</DialogTitle>
               <DialogDescription>
-                Save a link to your collection. Add tags to organize better.
+                {editMode ? "Update your bookmark details" : "Save a link to your collection. Add tags to organize better."}
               </DialogDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -337,7 +373,7 @@ export const AddBookmarkDialog = ({
               disabled={loading || fetching}
               className="flex-1 h-9 bg-gradient-primary hover:opacity-90 transition-opacity"
             >
-              {loading ? "Saving..." : fetching ? "Fetching..." : "Save Bookmark"}
+              {loading ? (editMode ? "Updating..." : "Saving...") : fetching ? "Fetching..." : (editMode ? "Update Bookmark" : "Save Bookmark")}
             </Button>
           </div>
         </form>

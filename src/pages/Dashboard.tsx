@@ -58,9 +58,10 @@ const Dashboard = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [prefillData, setPrefillData] = useState<any>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
 
   // Use optimized hooks with React Query caching
-  const { bookmarks, isLoading, deleteBookmark, toggleReading, toggleRead, bulkDelete, bulkMoveToFolder, refetch } = 
+  const { bookmarks, isLoading, deleteBookmark, toggleReading, toggleRead, bulkDelete, bulkMoveToFolder, refetch } =
     useBookmarks(user?.id, selectedFolderId);
   const { data: folders = [] } = useFolders(user?.id);
 
@@ -157,6 +158,11 @@ const Dashboard = () => {
     const ids = Array.from(selectedBookmarks);
     bulkMoveToFolder.mutate({ ids, folderId });
     setSelectedBookmarks(new Set());
+  };
+
+  const handleEditBookmark = (bookmark: Bookmark) => {
+    setEditingBookmark(bookmark);
+    setIsAddDialogOpen(true);
   };
 
   const toggleBookmarkSelection = (id: string) => {
@@ -331,6 +337,7 @@ const Dashboard = () => {
               onDelete={handleDeleteBookmark}
               onToggleReading={handleToggleReading}
               onToggleRead={handleToggleRead}
+              onEdit={handleEditBookmark}
               onRefresh={refetch}
               selectedBookmarks={selectedBookmarks}
               onToggleSelection={toggleBookmarkSelection}
@@ -343,6 +350,7 @@ const Dashboard = () => {
               onDelete={handleDeleteBookmark}
               onToggleReading={handleToggleReading}
               onToggleRead={handleToggleRead}
+              onEdit={handleEditBookmark}
             />
           )}
           
@@ -352,6 +360,7 @@ const Dashboard = () => {
               onDelete={handleDeleteBookmark}
               onToggleReading={handleToggleReading}
               onToggleRead={handleToggleRead}
+              onEdit={handleEditBookmark}
             />
           )}
 
@@ -375,10 +384,25 @@ const Dashboard = () => {
 
       <AddBookmarkDialog
         open={isAddDialogOpen}
-        onOpenChange={setIsAddDialogOpen}
+        onOpenChange={(open) => {
+          setIsAddDialogOpen(open);
+          if (!open) {
+            setEditingBookmark(null);
+            setPrefillData(null);
+          }
+        }}
         onSuccess={refetch}
         prefillData={prefillData}
         folderId={selectedFolderId}
+        editMode={!!editingBookmark}
+        bookmarkId={editingBookmark?.id}
+        existingData={editingBookmark ? {
+          title: editingBookmark.title,
+          url: editingBookmark.url,
+          description: editingBookmark.description,
+          tags: editingBookmark.tags,
+          reading: editingBookmark.reading,
+        } : undefined}
       />
 
       <ImportExportDialog
