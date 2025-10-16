@@ -35,7 +35,7 @@ interface ChatRequest {
 }
 
 interface Intent {
-  type: 'reading_list' | 'add_link' | 'search' | 'chat' | 'bored' | 'unknown';
+  type: 'reading_list' | 'add_link' | 'search' | 'chat' | 'bored' | 'personality' | 'unknown';
   query?: string;
   url?: string;
   tags?: string[];
@@ -193,11 +193,14 @@ serve(async (req) => {
       case 'bored':
         reply = await suggestBookmark(serviceClient, userId);
         break;
+      case 'personality':
+        reply = await analyzePersonality(serviceClient, userId);
+        break;
       case 'chat':
         reply = await chatAboutBookmarks(serviceClient, userId, message);
         break;
       default:
-        reply = "🔖 *I'm your Bookmark Assistant!*\n\nI can only help with questions about your saved bookmarks, links, and reading materials.\n\n*What I can do:*\n📚 Show your reading list\n🔗 Add bookmarks\n🔍 Search your saved links\n💡 Recommend articles to read\n📊 Analyze your collection\n🏷️ Help with tags and organization\n\n*Try asking:*\n• \"Show me React tutorials\"\n• \"What should I read next?\"\n• \"How many bookmarks do I have?\"\n• \"Summarize my collection\"\n\nPlease ask something related to your bookmarks! 😊";
+        reply = "🔖 *I'm your Bookmark Assistant!*\n\nI can only help with questions about your saved bookmarks, links, and reading materials.\n\n*What I can do:*\n📚 Show your reading list\n🔗 Add bookmarks\n🔍 Search your saved links\n💡 Recommend articles to read\n📊 Analyze your collection\n🏷️ Help with tags and organization\n👤 Tell me about your personality\n\n*Try asking:*\n• \"Show me React tutorials\"\n• \"What should I read next?\"\n• \"Tell me about myself\"\n• \"Who am I?\"\n• \"Summarize my collection\"\n\nPlease ask something related to your bookmarks! 😊";
     }
 
     // Send message to Telegram if it's a Telegram request
@@ -366,6 +369,19 @@ function isBookmarkRelated(message: string): boolean {
 
 function parseIntent(message: string): Intent {
   const lowerMessage = message.toLowerCase().trim();
+
+  // Personality intent - check for various personality-related queries
+  if (
+    lowerMessage.includes('about me') ||
+    lowerMessage.includes('who am i') ||
+    lowerMessage.includes('my personality') ||
+    lowerMessage.includes('tell me about myself') ||
+    lowerMessage.includes('analyze me') ||
+    lowerMessage.includes('my interests') ||
+    lowerMessage.includes('personality insight')
+  ) {
+    return { type: 'personality' };
+  }
 
   // Bored intent - check first before other intents
   if (lowerMessage.includes('bored') || lowerMessage.includes('bore')) {
@@ -614,6 +630,160 @@ async function suggestBookmark(supabase: any, userId: string): Promise<string> {
   } catch (error) {
     console.error('Error suggesting bookmark:', error);
     return "❌ Could not fetch a suggestion";
+  }
+}
+
+async function analyzePersonality(supabase: any, userId: string): Promise<string> {
+  try {
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      console.error('LOVABLE_API_KEY not set');
+      return "❌ Personality analysis is not configured. Please contact support.";
+    }
+
+    console.log('Fetching bookmarks for personality analysis, user:', userId);
+
+    // Fetch user's bookmarks
+    const { data: bookmarks, error: bookmarksError } = await supabase
+      .from('bookmarks')
+      .select('title, description, tags, category, url')
+      .eq('user_id', userId)
+      .limit(100);
+
+    if (bookmarksError) {
+      console.error('Error fetching bookmarks:', bookmarksError);
+      return "❌ Failed to fetch your bookmarks for analysis";
+    }
+
+    if (!bookmarks || bookmarks.length === 0) {
+      return "📚 *No Personality Insights Yet*\n\nStart saving bookmarks to unlock personality insights! The more bookmarks you save, the better I can understand your interests and preferences.";
+    }
+
+    console.log(`Analyzing ${bookmarks.length} bookmarks for personality`);
+
+    // Prepare data for AI analysis
+    const bookmarkSummary = bookmarks.map((b: any) => ({
+      title: b.title,
+      description: b.description,
+      tags: b.tags,
+      category: b.category,
+    }));
+
+    // Call Lovable AI
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a personality analyst. Analyze bookmark collections to provide insightful personality analysis.',
+          },
+          {
+            role: 'user',
+            content: `Analyze this user's interests and personality based on their bookmark collection:\n\n${JSON.stringify(bookmarkSummary, null, 2)}\n\nProvide insights about their interests, topics they follow, reading patterns, and personality traits.`,
+          },
+        ],
+        tools: [
+          {
+            type: 'function',
+            function: {
+              name: 'personality_analysis',
+              description: 'Return personality analysis based on bookmark collection',
+              parameters: {
+                type: 'object',
+                properties: {
+                  interests: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Main interests (3-5 items)',
+                  },
+                  topics: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Key topics they follow (3-5 items)',
+                  },
+                  readingPatterns: {
+                    type: 'string',
+                    description: 'Description of their reading patterns and habits',
+                  },
+                  personalityTraits: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'Personality traits (3-5 items)',
+                  },
+                },
+                required: ['interests', 'topics', 'readingPatterns', 'personalityTraits'],
+                additionalProperties: false,
+              },
+            },
+          },
+        ],
+        tool_choice: { type: 'function', function: { name: 'personality_analysis' } },
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error('Lovable AI error:', aiResponse.status, errorText);
+      
+      if (aiResponse.status === 429) {
+        return "⏳ AI is temporarily busy. Please try again in a moment.";
+      }
+      if (aiResponse.status === 402) {
+        return "💳 AI credits depleted. Please contact support.";
+      }
+      
+      return "❌ Personality analysis temporarily unavailable";
+    }
+
+    const aiData = await aiResponse.json();
+    console.log('AI personality analysis response received');
+
+    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall) {
+      console.error('No analysis returned from AI');
+      return "❌ Could not generate personality analysis";
+    }
+
+    const analysis = JSON.parse(toolCall.function.arguments);
+
+    // Format the response for Telegram
+    let reply = `✨ *Your Personality Insights*\n\n`;
+    
+    // Interests
+    reply += `🎯 *Main Interests*\n`;
+    analysis.interests.forEach((interest: string) => {
+      reply += `• ${interest}\n`;
+    });
+    reply += `\n`;
+    
+    // Topics
+    reply += `📚 *Key Topics*\n`;
+    analysis.topics.forEach((topic: string) => {
+      reply += `• ${topic}\n`;
+    });
+    reply += `\n`;
+    
+    // Personality Traits
+    reply += `💎 *Personality Traits*\n`;
+    analysis.personalityTraits.forEach((trait: string) => {
+      reply += `• ${trait}\n`;
+    });
+    reply += `\n`;
+    
+    // Reading Patterns
+    reply += `📖 *Reading Patterns*\n${analysis.readingPatterns}`;
+
+    return reply;
+
+  } catch (error) {
+    console.error('Error in analyzePersonality:', error);
+    return "❌ Error analyzing personality. Please try again.";
   }
 }
 
