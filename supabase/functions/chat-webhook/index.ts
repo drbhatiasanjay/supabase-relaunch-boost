@@ -205,6 +205,28 @@ serve(async (req) => {
       const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
       if (TELEGRAM_BOT_TOKEN) {
         try {
+          // Escape special Markdown characters for Telegram
+          // Replace problematic characters that can break Markdown parsing
+          const escapedReply = reply
+            .replace(/\*/g, '\\*')  // Escape asterisks
+            .replace(/_/g, '\\_')   // Escape underscores
+            .replace(/\[/g, '\\[')  // Escape brackets
+            .replace(/\]/g, '\\]')  // Escape brackets
+            .replace(/\(/g, '\\(')  // Escape parentheses
+            .replace(/\)/g, '\\)')  // Escape parentheses
+            .replace(/~/g, '\\~')   // Escape tilde
+            .replace(/`/g, '\\`')   // Escape backticks
+            .replace(/>/g, '\\>')   // Escape greater than
+            .replace(/#/g, '\\#')   // Escape hash
+            .replace(/\+/g, '\\+')  // Escape plus
+            .replace(/-/g, '\\-')   // Escape minus
+            .replace(/=/g, '\\=')   // Escape equals
+            .replace(/\|/g, '\\|')  // Escape pipe
+            .replace(/\{/g, '\\{')  // Escape braces
+            .replace(/\}/g, '\\}')  // Escape braces
+            .replace(/\./g, '\\.')  // Escape dot
+            .replace(/!/g, '\\!');  // Escape exclamation
+          
           const telegramResponse = await fetch(
             `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
             {
@@ -212,8 +234,8 @@ serve(async (req) => {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 chat_id: chatRequest.telegram_id,
-                text: reply,
-                parse_mode: 'Markdown',
+                text: escapedReply,
+                parse_mode: 'MarkdownV2',
               }),
             }
           );
@@ -221,6 +243,24 @@ serve(async (req) => {
           if (!telegramResponse.ok) {
             const errorData = await telegramResponse.text();
             console.error('Telegram API error:', telegramResponse.status, errorData);
+            
+            // Fallback: try sending without parse_mode
+            console.log('Retrying without Markdown formatting...');
+            const fallbackResponse = await fetch(
+              `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  chat_id: chatRequest.telegram_id,
+                  text: reply, // Send original text without formatting
+                }),
+              }
+            );
+            
+            if (fallbackResponse.ok) {
+              console.log('✅ Message sent to Telegram successfully (plain text)');
+            }
           } else {
             console.log('✅ Message sent to Telegram successfully');
           }
