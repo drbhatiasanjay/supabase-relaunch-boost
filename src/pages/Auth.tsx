@@ -24,6 +24,11 @@ const signupSchema = z.object({
     .max(15, { message: "Phone number too long" })
     .optional()
     .or(z.literal("")),
+  telegram_id: z.string()
+    .trim()
+    .max(50, { message: "Telegram ID too long" })
+    .optional()
+    .or(z.literal("")),
 });
 
 const loginSchema = z.object({
@@ -37,6 +42,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [telegramId, setTelegramId] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -62,14 +68,18 @@ const Auth = () => {
       const validated = signupSchema.parse({ 
         email, 
         password,
-        phone_number: phoneNumber || ""
+        phone_number: phoneNumber || "",
+        telegram_id: telegramId || ""
       });
       const redirectUrl = `${window.location.origin}/dashboard`;
 
-      // Only include phone_number in metadata if it was provided
+      // Only include phone_number and telegram_id in metadata if provided
       const metadata: Record<string, string> = {};
       if (validated.phone_number && validated.phone_number.trim()) {
         metadata.phone_number = validated.phone_number;
+      }
+      if (validated.telegram_id && validated.telegram_id.trim()) {
+        metadata.telegram_id = validated.telegram_id;
       }
 
       const { error } = await supabase.auth.signUp({
@@ -236,7 +246,7 @@ const Auth = () => {
                 <div className="space-y-2">
                   <Label htmlFor="signup-phone" className="flex items-center gap-2">
                     <Phone className="w-3.5 h-3.5" />
-                    WhatsApp Phone Number (Optional)
+                    Phone Number (Optional)
                   </Label>
                   <Input
                     id="signup-phone"
@@ -248,7 +258,25 @@ const Auth = () => {
                     maxLength={15}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Add to enable WhatsApp chat features via n8n
+                    International format for messaging integrations
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-telegram" className="flex items-center gap-2">
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    Telegram ID (Optional)
+                  </Label>
+                  <Input
+                    id="signup-telegram"
+                    type="text"
+                    placeholder="Your Telegram user ID"
+                    value={telegramId}
+                    onChange={(e) => setTelegramId(e.target.value)}
+                    disabled={loading}
+                    maxLength={50}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    For Telegram bot integration
                   </p>
                 </div>
                 <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-opacity" disabled={loading}>

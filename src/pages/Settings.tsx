@@ -87,9 +87,10 @@ const Settings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const updateData: { phone_number?: string; telegram_id?: string } = {};
-      if (phoneNumber) updateData.phone_number = phoneNumber;
-      if (telegramId) updateData.telegram_id = telegramId;
+      // Update phone number and telegram ID separately or together
+      const updateData: { phone_number?: string | null; telegram_id?: string | null } = {};
+      updateData.phone_number = phoneNumber || null;
+      updateData.telegram_id = telegramId || null;
 
       const { error } = await supabase
         .from("profiles")
@@ -192,7 +193,7 @@ const Settings = () => {
 
               <Button
                 onClick={handleSave}
-                disabled={loading || !phoneNumber}
+                disabled={loading}
                 className="w-full gap-2"
               >
                 <Save className="h-4 w-4" />
@@ -228,7 +229,7 @@ const Settings = () => {
 
               <Button
                 onClick={handleSave}
-                disabled={loading || !telegramId}
+                disabled={loading}
                 className="w-full gap-2"
               >
                 <Save className="h-4 w-4" />
