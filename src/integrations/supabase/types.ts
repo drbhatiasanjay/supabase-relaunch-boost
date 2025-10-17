@@ -161,7 +161,68 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_bookmark_by_telegram: {
+        Args: {
+          p_tags?: string
+          p_telegram_id: string
+          p_title?: string
+          p_url: string
+        }
+        Returns: {
+          id: string
+          tags: string[]
+          title: string
+          url: string
+        }[]
+      }
+      add_bookmark_by_whatsapp: {
+        Args: {
+          p_phone_number: string
+          p_tags?: string
+          p_title?: string
+          p_url: string
+        }
+        Returns: {
+          id: string
+          tags: string[]
+          title: string
+          url: string
+        }[]
+      }
+      get_bookmarks_by_telegram: {
+        Args: { p_tag?: string; p_telegram_id: string }
+        Returns: {
+          category: string
+          created_at: string
+          description: string
+          folder_id: string
+          id: string
+          read: boolean
+          reading: boolean
+          tags: string[]
+          title: string
+          updated_at: string
+          url: string
+          user_id: string
+        }[]
+      }
+      get_bookmarks_by_whatsapp: {
+        Args: { p_phone_number: string; p_tag?: string }
+        Returns: {
+          category: string
+          created_at: string
+          description: string
+          folder_id: string
+          id: string
+          read: boolean
+          reading: boolean
+          tags: string[]
+          title: string
+          updated_at: string
+          url: string
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
