@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
@@ -8,37 +7,10 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-// Basic per-user rate limiting (in-memory)
-// Window: 60 seconds, Max: 60 requests
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX = 60;
-const rlStore = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(key: string) {
-  const now = Date.now();
-  const entry = rlStore.get(key);
-  if (!entry || now > entry.resetAt) {
-    rlStore.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return { allowed: true, remaining: RATE_LIMIT_MAX - 1, resetAt: now + RATE_LIMIT_WINDOW_MS };
-  }
-  if (entry.count >= RATE_LIMIT_MAX) {
-    return { allowed: false, remaining: 0, resetAt: entry.resetAt };
-  }
-  entry.count += 1;
-  return { allowed: true, remaining: RATE_LIMIT_MAX - entry.count, resetAt: entry.resetAt };
-}
-
 interface ChatRequest {
   message: string;
   phone?: string;
   telegram_id?: string;
-}
-
-interface Intent {
-  type: 'reading_list' | 'add_link' | 'search' | 'chat' | 'bored' | 'personality' | 'unknown';
-  query?: string;
-  url?: string;
-  tags?: string[];
 }
 
 // Input validation schema
@@ -54,17 +26,16 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: {
-        headers: {
-          Authorization: req.headers.get('Authorization') ?? '',
-        },
-      },
-    });
+    const N8N_WEBHOOK_URL = Deno.env.get('N8N_WEBHOOK_URL');
+    if (!N8N_WEBHOOK_URL) {
+      console.error('N8N_WEBHOOK_URL not configured');
+      return new Response(
+        JSON.stringify({ reply: "Server misconfiguration. N8N webhook not configured." }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
 
-    // Parse and validate input with better error handling
+    // Parse and validate input
     let rawBody;
     try {
       const bodyText = await req.text();
@@ -117,19 +88,7 @@ serve(async (req) => {
     }
 
     const { message, phone, telegram_id } = chatRequest;
-    console.log('Chat request received');
-
-    // Use service role to map phone/telegram_id to user
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!serviceKey) {
-      console.error('SUPABASE_SERVICE_ROLE_KEY not set');
-      return new Response(
-        JSON.stringify({ reply: "Server misconfiguration. Try again later." }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      );
-    }
-    
-    const serviceClient = createClient(supabaseUrl, serviceKey);
+    console.log('Chat request received:', { message, phone: phone ? 'set' : 'unset', telegram_id: telegram_id ? 'set' : 'unset' });
 
     if (!phone && !telegram_id) {
       return new Response(
@@ -138,107 +97,48 @@ serve(async (req) => {
       );
     }
 
-    let profileRes;
-    if (phone) {
-      profileRes = await serviceClient
-        .from('profiles')
-        .select('user_id')
-        .eq('phone_number', phone)
-        .maybeSingle();
-    } else {
-      profileRes = await serviceClient
-        .from('profiles')
-        .select('user_id')
-        .eq('telegram_id', telegram_id!)
-        .maybeSingle();
-    }
+    // Forward to N8N webhook
+    console.log('Forwarding to N8N webhook...');
+    const n8nResponse = await fetch(N8N_WEBHOOK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message,
+        phone,
+        telegram_id,
+      }),
+    });
 
-    if (profileRes.error || !profileRes.data) {
-      console.error('Profile lookup failed:', profileRes.error || 'not found');
+    if (!n8nResponse.ok) {
+      console.error('N8N webhook error:', n8nResponse.status, await n8nResponse.text());
       return new Response(
-        JSON.stringify({ reply: "❌ User not found for provided identifier." }),
+        JSON.stringify({ reply: "Sorry, I couldn't process your request right now. Please try again later." }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
 
-    const userId = profileRes.data.user_id as string;
-    console.log('Mapped identifier to user:', userId);
-
-    // Rate limiting per user
-    const rl = checkRateLimit(userId);
-    if (!rl.allowed) {
-      return new Response(
-        JSON.stringify({ reply: "Too many requests. Please slow down." }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
-      );
-    }
-
-    // 2. Parse intent
-    const intent = parseIntent(message);
-    console.log('Parsed intent:', intent);
-
-    // 3. Handle intent
-    let reply = '';
+    const n8nData = await n8nResponse.json();
+    console.log('N8N response received:', n8nData);
     
-    switch (intent.type) {
-      case 'reading_list':
-        reply = await getReadingList(serviceClient, userId);
-        break;
-      case 'add_link':
-        reply = await addBookmark(serviceClient, userId, intent.url!, intent.query);
-        break;
-      case 'search':
-        reply = await searchBookmarks(serviceClient, userId, intent.query!);
-        break;
-      case 'bored':
-        reply = await suggestBookmark(serviceClient, userId);
-        break;
-      case 'personality':
-        reply = await analyzePersonality(serviceClient, userId);
-        break;
-      case 'chat':
-        reply = await chatAboutBookmarks(serviceClient, userId, message);
-        break;
-      default:
-        reply = "🔖 *I'm your Bookmark Assistant!*\n\nI can only help with questions about your saved bookmarks, links, and reading materials.\n\n*What I can do:*\n📚 Show your reading list\n🔗 Add bookmarks\n🔍 Search your saved links\n💡 Recommend articles to read\n📊 Analyze your collection\n🏷️ Help with tags and organization\n👤 Tell me about your personality\n\n*Try asking:*\n• \"Show me React tutorials\"\n• \"What should I read next?\"\n• \"Tell me about myself\"\n• \"Who am I?\"\n• \"Summarize my collection\"\n\nPlease ask something related to your bookmarks! 😊";
-    }
+    // Extract reply from N8N response
+    const reply = n8nData.reply || n8nData.message || "I received your message but couldn't generate a response.";
 
     // Send message to Telegram if it's a Telegram request
-    if (chatRequest.telegram_id) {
+    if (telegram_id) {
       const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
       if (TELEGRAM_BOT_TOKEN) {
         try {
-          // Escape special Markdown characters for Telegram
-          // Replace problematic characters that can break Markdown parsing
-          const escapedReply = reply
-            .replace(/\*/g, '\\*')  // Escape asterisks
-            .replace(/_/g, '\\_')   // Escape underscores
-            .replace(/\[/g, '\\[')  // Escape brackets
-            .replace(/\]/g, '\\]')  // Escape brackets
-            .replace(/\(/g, '\\(')  // Escape parentheses
-            .replace(/\)/g, '\\)')  // Escape parentheses
-            .replace(/~/g, '\\~')   // Escape tilde
-            .replace(/`/g, '\\`')   // Escape backticks
-            .replace(/>/g, '\\>')   // Escape greater than
-            .replace(/#/g, '\\#')   // Escape hash
-            .replace(/\+/g, '\\+')  // Escape plus
-            .replace(/-/g, '\\-')   // Escape minus
-            .replace(/=/g, '\\=')   // Escape equals
-            .replace(/\|/g, '\\|')  // Escape pipe
-            .replace(/\{/g, '\\{')  // Escape braces
-            .replace(/\}/g, '\\}')  // Escape braces
-            .replace(/\./g, '\\.')  // Escape dot
-            .replace(/!/g, '\\!');  // Escape exclamation
-          
+          console.log('Sending response to Telegram...');
           const telegramResponse = await fetch(
             `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                chat_id: chatRequest.telegram_id,
-                text: escapedReply,
-                parse_mode: 'MarkdownV2',
+                chat_id: telegram_id,
+                text: reply,
               }),
             }
           );
@@ -246,24 +146,6 @@ serve(async (req) => {
           if (!telegramResponse.ok) {
             const errorData = await telegramResponse.text();
             console.error('Telegram API error:', telegramResponse.status, errorData);
-            
-            // Fallback: try sending without parse_mode
-            console.log('Retrying without Markdown formatting...');
-            const fallbackResponse = await fetch(
-              `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  chat_id: chatRequest.telegram_id,
-                  text: reply, // Send original text without formatting
-                }),
-              }
-            );
-            
-            if (fallbackResponse.ok) {
-              console.log('✅ Message sent to Telegram successfully (plain text)');
-            }
           } else {
             console.log('✅ Message sent to Telegram successfully');
           }
@@ -275,11 +157,9 @@ serve(async (req) => {
       }
     }
 
-    // Return only 'reply' field for n8n/Telegram compatibility
-    const response = { reply };
-    console.log('Sending response with reply length:', reply.length);
+    // Return N8N's response
     return new Response(
-      JSON.stringify(response),
+      JSON.stringify({ reply }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 
@@ -288,581 +168,12 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Request processing error:', error instanceof Error ? error.message : 'Unknown error');
-    const response = { reply: "Sorry, I encountered an error processing your request." };
     return new Response(
-      JSON.stringify(response),
+      JSON.stringify({ reply: "Sorry, I encountered an error processing your request." }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 // Return 200 so n8n can deliver the message
+        status: 200
       }
     );
   }
 });
-
-function isBookmarkRelated(message: string): boolean {
-  const lowerMessage = message.toLowerCase().trim();
-  
-  // Bookmark-specific keywords that indicate valid queries
-  const bookmarkKeywords = [
-    'bookmark', 'link', 'save', 'saved', 'article', 'reading list', 'read',
-    'tutorial', 'resource', 'tag', 'folder', 'collection', 'organize',
-    'learn', 'study', 'framework', 'library', 'documentation', 'docs',
-    'web development', 'programming', 'code', 'coding', 'tech',
-    'react', 'vue', 'angular', 'node', 'python', 'javascript', 'typescript',
-    'css', 'html', 'my bookmarks', 'my links', 'my collection', 'my saves'
-  ];
-  
-  // Off-topic patterns that should be rejected
-  const offTopicPatterns = [
-    // General knowledge questions
-    /capital of/i, /president of/i, /king of/i, /queen of/i,
-    /population of/i, /currency of/i, /language of/i,
-    // General "who" questions (unless about saved content)
-    /^who (is|was|are|were)(?!.*\b(saved|bookmark|link)\b)/i,
-    // Weather, time, math, etc.
-    /weather/i, /temperature/i, /time in/i, /\d+\s*[\+\-\*\/]\s*\d+/,
-    // Personal questions unrelated to bookmarks
-    /how old are you/i, /who made you/i, /what are you/i,
-    // Random greetings without context
-    /^(hi|hello|hey|sup)$/i,
-  ];
-  
-  // Check for off-topic patterns first
-  if (offTopicPatterns.some(pattern => pattern.test(message))) {
-    return false;
-  }
-  
-  // If message contains bookmark keywords, it's valid
-  if (bookmarkKeywords.some(keyword => lowerMessage.includes(keyword))) {
-    return true;
-  }
-  
-  // If message has a URL, it's likely bookmark-related
-  if (/(https?:\/\/[^\s]+)/.test(message)) {
-    return true;
-  }
-  
-  // If it's a very short message without context, be strict
-  const wordCount = lowerMessage.split(/\s+/).length;
-  if (wordCount <= 3 && !lowerMessage.includes('?')) {
-    // Single words or short phrases need to be tech-related
-    const techTerms = [
-      'react', 'vue', 'angular', 'node', 'python', 'java', 'ruby', 'php', 'swift',
-      'css', 'html', 'javascript', 'typescript', 'nextjs', 'tailwind', 'prisma',
-      'github', 'gitlab', 'stackoverflow', 'mdn', 'w3schools'
-    ];
-    return techTerms.some(term => lowerMessage.includes(term));
-  }
-  
-  // For questions, check if they're about personal collection
-  if (lowerMessage.includes('?')) {
-    const collectionQuestions = [
-      'what', 'how many', 'which', 'do i have', 'did i save', 'should i',
-      'can you show', 'tell me about', 'summarize', 'topics', 'most common'
-    ];
-    return collectionQuestions.some(q => lowerMessage.includes(q));
-  }
-  
-  // Default to false for safety
-  return false;
-}
-
-function parseIntent(message: string): Intent {
-  const lowerMessage = message.toLowerCase().trim();
-
-  // Personality intent - check for various personality-related queries
-  if (
-    lowerMessage.includes('about me') ||
-    lowerMessage.includes('who am i') ||
-    lowerMessage.includes('my personality') ||
-    lowerMessage.includes('tell me about myself') ||
-    lowerMessage.includes('analyze me') ||
-    lowerMessage.includes('my interests') ||
-    lowerMessage.includes('personality insight')
-  ) {
-    return { type: 'personality' };
-  }
-
-  // Bored intent - check first before other intents
-  if (lowerMessage.includes('bored') || lowerMessage.includes('bore')) {
-    return { type: 'bored' };
-  }
-
-  // Reading list intent
-  if (lowerMessage.includes('reading list') || lowerMessage.includes('show reading') || lowerMessage === 'reading') {
-    return { type: 'reading_list' };
-  }
-
-  // Add link intent - accept "add <url>" OR plain URLs
-  const urlRegex = /(https?:\/\/[^\s]+)/;
-  const urlMatch = message.match(urlRegex);
-  if (urlMatch) {
-    const url = urlMatch[1];
-    // If message starts with "add", strip it out
-    let description = message.replace(urlMatch[0], '').replace(/add/i, '').trim();
-    // If no description remains (just a plain URL), set empty
-    if (!description || description === url) {
-      description = '';
-    }
-    return { type: 'add_link', url, query: description };
-  }
-
-  // Search intent - only for explicit "search" or "find" commands with content
-  if ((lowerMessage.startsWith('search ') || lowerMessage.startsWith('find ')) && lowerMessage.length > 7) {
-    const query = message.replace(/^(search|find)\s+/i, '').trim();
-    return { type: 'search', query };
-  }
-
-  // Expanded chat keywords for better conversational detection
-  const chatKeywords = [
-    '?', 'what', 'why', 'how', 'when', 'where', 'who', 'which',
-    'recommend', 'suggest', 'tell me', 'show me', 'do i', 'did i', 'can you',
-    'summarize', 'summarise', 'summerise', // Common misspellings
-    'learn', 'topics', 'about', 'framework', 'articles', 'resources',
-    'should i', 'help', 'any', 'have i', 'my bookmarks', 'my collection'
-  ];
-
-  // Check if message is bookmark-related before routing to chat
-  if (chatKeywords.some(keyword => lowerMessage.includes(keyword))) {
-    // Validate that it's actually about bookmarks
-    if (!isBookmarkRelated(message)) {
-      return { type: 'unknown' };
-    }
-    return { type: 'chat' };
-  }
-
-  // Single word technical terms should go to chat (not search)
-  const techTerms = [
-    'react', 'vue', 'angular', 'node', 'python', 'java', 'ruby', 'php', 'swift',
-    'css', 'html', 'javascript', 'typescript', 'nextjs', 'tailwind', 'prisma'
-  ];
-  const wordCount = lowerMessage.split(/\s+/).length;
-  if (wordCount === 1 && techTerms.includes(lowerMessage)) {
-    return { type: 'chat' };
-  }
-
-  // For multi-word messages that aren't commands, check if bookmark-related
-  if (wordCount > 2 && !lowerMessage.startsWith('#')) {
-    if (isBookmarkRelated(message)) {
-      return { type: 'chat' };
-    }
-  }
-
-  return { type: 'unknown' };
-}
-
-async function getReadingList(supabase: any, userId: string): Promise<string> {
-  const startTime = Date.now();
-  
-  // Optimized: Use indexed columns only
-  const { data: bookmarks, error } = await supabase
-    .from('bookmarks')
-    .select('title, url, tags')
-    .eq('user_id', userId)
-    .eq('reading', true)
-    .order('created_at', { ascending: false })
-    .limit(5);
-
-  const duration = Date.now() - startTime;
-  console.log(`✅ Reading list fetched in ${duration}ms`);
-
-  if (error) {
-    console.error('Error fetching reading list:', error);
-    return "❌ Error fetching reading list";
-  }
-
-  console.log(`Reading list query completed, count=${bookmarks?.length ?? 0}`);
-
-  if (!bookmarks || bookmarks.length === 0) {
-    console.log('Reading list is empty');
-    return "📚 Your reading list is empty.\n\nMark some bookmarks for reading from the dashboard!";
-  }
-
-  let reply = `📚 *Reading List* (${bookmarks.length} bookmark${bookmarks.length > 1 ? 's' : ''})\n\n`;
-  bookmarks.forEach((b: any, i: number) => {
-    const tags = b.tags?.slice(0, 2).map((t: string) => `#${t}`).join(' ') || '';
-    reply += `${i + 1}. ${b.title}\n${b.url}\n${tags}\n\n`;
-  });
-
-  return reply.trim();
-}
-
-async function addBookmark(supabase: any, userId: string, url: string, description?: string): Promise<string> {
-  try {
-    // Extract title from URL
-    const urlObj = new URL(url);
-    
-    // Check if bookmark already exists
-    const { data: existing, error: existingError } = await supabase
-      .from('bookmarks')
-      .select('title, url')
-      .eq('user_id', userId)
-      .eq('url', url)
-      .maybeSingle();
-
-    if (existingError) {
-      console.error('Error checking existing bookmark:', existingError);
-    }
-
-    if (existing) {
-      console.log(`⚠️ Duplicate bookmark detected: ${existing.url}`);
-      return `⚠️ *Bookmark already exists!*\n\n${existing.title}\n${existing.url}`;
-    }
-
-    // Fetch metadata using Perplexity API
-    let metadata = { title: '', description: '', tags: [] };
-    try {
-      const { data: metadataResult, error: metadataError } = await supabase.functions.invoke('fetch-bookmark-metadata', {
-        body: { url }
-      });
-
-      if (!metadataError && metadataResult) {
-        metadata = metadataResult;
-        console.log('Fetched metadata:', metadata);
-      }
-    } catch (metadataErr) {
-      console.error('Error fetching metadata:', metadataErr);
-      // Continue with basic data if metadata fetch fails
-    }
-
-    // Use fetched metadata or fallback to basic values
-    const title = metadata.title || description || urlObj.hostname;
-    const finalDescription = metadata.description || description || null;
-    const tags = metadata.tags || [];
-
-    const { error } = await supabase
-      .from('bookmarks')
-      .insert({
-        user_id: userId,
-        url: url,
-        title: title,
-        description: finalDescription,
-        tags: tags,
-        reading: false
-      });
-
-    if (error) {
-      console.error('Error adding bookmark:', error);
-      return "❌ Failed to add bookmark";
-    }
-
-    const tagString = tags.length > 0 ? '\n🏷️ ' + tags.slice(0, 3).map((t: string) => `#${t}`).join(' ') : '';
-    return `✅ *Bookmark added!*\n\n${title}\n${url}${tagString}`;
-  } catch (error) {
-    console.error('Invalid URL:', error);
-    return "❌ Invalid URL. Please provide a valid link.";
-  }
-}
-
-async function searchBookmarks(supabase: any, userId: string, query: string): Promise<string> {
-  const startTime = Date.now();
-  const isTagSearch = query.startsWith('#');
-  const searchTerm = isTagSearch ? query.substring(1) : query;
-
-  // Optimized: Use indexed columns, limit columns selected
-  let dbQuery = supabase
-    .from('bookmarks')
-    .select('title, url, tags')
-    .eq('user_id', userId)
-    .limit(5);
-
-  if (isTagSearch) {
-    // Uses GIN index on tags
-    dbQuery = dbQuery.contains('tags', [searchTerm]);
-  } else {
-    // Uses full-text search index
-    dbQuery = dbQuery.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,url.ilike.%${searchTerm}%`);
-  }
-
-  const { data: bookmarks, error } = await dbQuery;
-  
-  const duration = Date.now() - startTime;
-  console.log(`✅ Search completed in ${duration}ms for query: "${query}"`);
-
-  if (error) {
-    console.error('Error searching bookmarks:', error);
-    return "❌ Search failed";
-  }
-
-  if (!bookmarks || bookmarks.length === 0) {
-    return `🔍 No results for "${query}"`;
-  }
-
-  let reply = `🔍 *Search: "${query}"* (${bookmarks.length})\n\n`;
-  bookmarks.forEach((b: any, i: number) => {
-    const tags = b.tags?.slice(0, 2).map((t: string) => `#${t}`).join(' ') || '';
-    reply += `${i + 1}. ${b.title}\n${b.url}\n${tags}\n\n`;
-  });
-
-  return reply.trim();
-}
-
-async function suggestBookmark(supabase: any, userId: string): Promise<string> {
-  try {
-    // Get a random bookmark from reading list first, then any bookmark
-    const { data: readingBookmarks } = await supabase
-      .from('bookmarks')
-      .select('title, url, description, tags')
-      .eq('user_id', userId)
-      .eq('reading', true)
-      .limit(10);
-
-    const { data: allBookmarks } = await supabase
-      .from('bookmarks')
-      .select('title, url, description, tags')
-      .eq('user_id', userId)
-      .limit(20);
-
-    const bookmarks = readingBookmarks?.length > 0 ? readingBookmarks : allBookmarks;
-
-    if (!bookmarks || bookmarks.length === 0) {
-      return "📚 You don't have any bookmarks yet!\n\nAdd some links to get personalized suggestions when you're bored.";
-    }
-
-    // Pick a random bookmark
-    const randomIndex = Math.floor(Math.random() * bookmarks.length);
-    const bookmark = bookmarks[randomIndex];
-    
-    const tags = bookmark.tags?.slice(0, 3).map((t: string) => `#${t}`).join(' ') || '';
-    
-    return `✨ *Here's something for you:*\n\n${bookmark.title}\n${bookmark.url}\n${tags}\n\n${bookmark.description ? bookmark.description : 'Enjoy! 🎯'}`;
-    
-  } catch (error) {
-    console.error('Error suggesting bookmark:', error);
-    return "❌ Could not fetch a suggestion";
-  }
-}
-
-async function analyzePersonality(supabase: any, userId: string): Promise<string> {
-  try {
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY not set');
-      return "❌ Personality analysis is not configured. Please contact support.";
-    }
-
-    console.log('Fetching bookmarks for personality analysis, user:', userId);
-
-    // Fetch user's bookmarks
-    const { data: bookmarks, error: bookmarksError } = await supabase
-      .from('bookmarks')
-      .select('title, description, tags, category, url')
-      .eq('user_id', userId)
-      .limit(100);
-
-    if (bookmarksError) {
-      console.error('Error fetching bookmarks:', bookmarksError);
-      return "❌ Failed to fetch your bookmarks for analysis";
-    }
-
-    if (!bookmarks || bookmarks.length === 0) {
-      return "📚 *No Personality Insights Yet*\n\nStart saving bookmarks to unlock personality insights! The more bookmarks you save, the better I can understand your interests and preferences.";
-    }
-
-    console.log(`Analyzing ${bookmarks.length} bookmarks for personality`);
-
-    // Prepare data for AI analysis
-    const bookmarkSummary = bookmarks.map((b: any) => ({
-      title: b.title,
-      description: b.description,
-      tags: b.tags,
-      category: b.category,
-    }));
-
-    // Call Lovable AI
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a personality analyst. Analyze bookmark collections to provide insightful personality analysis.',
-          },
-          {
-            role: 'user',
-            content: `Analyze this user's interests and personality based on their bookmark collection:\n\n${JSON.stringify(bookmarkSummary, null, 2)}\n\nProvide insights about their interests, topics they follow, reading patterns, and personality traits.`,
-          },
-        ],
-        tools: [
-          {
-            type: 'function',
-            function: {
-              name: 'personality_analysis',
-              description: 'Return personality analysis based on bookmark collection',
-              parameters: {
-                type: 'object',
-                properties: {
-                  interests: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'Main interests (3-5 items)',
-                  },
-                  topics: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'Key topics they follow (3-5 items)',
-                  },
-                  readingPatterns: {
-                    type: 'string',
-                    description: 'Description of their reading patterns and habits',
-                  },
-                  personalityTraits: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'Personality traits (3-5 items)',
-                  },
-                },
-                required: ['interests', 'topics', 'readingPatterns', 'personalityTraits'],
-                additionalProperties: false,
-              },
-            },
-          },
-        ],
-        tool_choice: { type: 'function', function: { name: 'personality_analysis' } },
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('Lovable AI error:', aiResponse.status, errorText);
-      
-      if (aiResponse.status === 429) {
-        return "⏳ AI is temporarily busy. Please try again in a moment.";
-      }
-      if (aiResponse.status === 402) {
-        return "💳 AI credits depleted. Please contact support.";
-      }
-      
-      return "❌ Personality analysis temporarily unavailable";
-    }
-
-    const aiData = await aiResponse.json();
-    console.log('AI personality analysis response received');
-
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) {
-      console.error('No analysis returned from AI');
-      return "❌ Could not generate personality analysis";
-    }
-
-    const analysis = JSON.parse(toolCall.function.arguments);
-
-    // Format the response for Telegram
-    let reply = `✨ *Your Personality Insights*\n\n`;
-    
-    // Interests
-    reply += `🎯 *Main Interests*\n`;
-    analysis.interests.forEach((interest: string) => {
-      reply += `• ${interest}\n`;
-    });
-    reply += `\n`;
-    
-    // Topics
-    reply += `📚 *Key Topics*\n`;
-    analysis.topics.forEach((topic: string) => {
-      reply += `• ${topic}\n`;
-    });
-    reply += `\n`;
-    
-    // Personality Traits
-    reply += `💎 *Personality Traits*\n`;
-    analysis.personalityTraits.forEach((trait: string) => {
-      reply += `• ${trait}\n`;
-    });
-    reply += `\n`;
-    
-    // Reading Patterns
-    reply += `📖 *Reading Patterns*\n${analysis.readingPatterns}`;
-
-    return reply;
-
-  } catch (error) {
-    console.error('Error in analyzePersonality:', error);
-    return "❌ Error analyzing personality. Please try again.";
-  }
-}
-
-async function chatAboutBookmarks(supabase: any, userId: string, message: string): Promise<string> {
-  try {
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY not set');
-      return "❌ AI chat is not configured. Please contact support.";
-    }
-
-    // Fetch user's bookmarks for context
-    const { data: bookmarks, error } = await supabase
-      .from('bookmarks')
-      .select('title, url, description, tags, category, reading')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(50);
-
-    if (error) {
-      console.error('Error fetching bookmarks for chat:', error);
-      return "❌ Could not retrieve your bookmarks";
-    }
-
-    // Build context from bookmarks
-    const bookmarksContext = bookmarks?.map((b: any, i: number) => 
-      `${i + 1}. ${b.title}${b.description ? ' - ' + b.description : ''}\n   URL: ${b.url}\n   Tags: ${b.tags?.join(', ') || 'none'}\n   ${b.reading ? '📚 Reading list' : ''}`
-    ).join('\n\n') || 'No bookmarks saved yet.';
-
-    const systemPrompt = `You are a helpful assistant for a bookmark manager. The user can save bookmarks and you help them find, organize, and discover insights from their saved links.
-
-User's bookmarks (most recent first):
-${bookmarksContext}
-
-Provide helpful, concise answers about their bookmarks. Be conversational and friendly. Use emojis where appropriate.`;
-
-    // Call Lovable AI
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
-        max_tokens: 500,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('AI API error:', response.status, errorText);
-      
-      if (response.status === 429) {
-        return "⏳ AI is temporarily busy. Please try again in a moment.";
-      }
-      if (response.status === 402) {
-        return "💳 AI credits depleted. Please contact support.";
-      }
-      
-      return "❌ AI chat temporarily unavailable";
-    }
-
-    const data = await response.json();
-    const aiReply = data.choices?.[0]?.message?.content;
-
-    if (!aiReply) {
-      console.error('No AI reply in response:', data);
-      return "❌ Could not generate a response";
-    }
-
-    return `🤖 *AI Assistant*\n\n${aiReply}`;
-
-  } catch (error) {
-    console.error('Error in chatAboutBookmarks:', error);
-    return "❌ Error communicating with AI";
-  }
-}
