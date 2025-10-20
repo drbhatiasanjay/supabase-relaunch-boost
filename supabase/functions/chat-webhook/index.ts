@@ -87,10 +87,21 @@ serve(async (req) => {
       chatRequest = validationResult.data;
     }
 
-    const { message, phone, telegram_id } = chatRequest;
-    console.log('Chat request received:', { message, phone: phone ? 'set' : 'unset', telegram_id: telegram_id ? 'set' : 'unset' });
+    // Normalize phone to E.164 where possible (basic rules, India default for 10 digits)
+    const normalizePhone = (p?: string) => {
+      if (!p) return undefined;
+      const digits = String(p).replace(/[^\d]/g, '');
+      if (digits.length === 10) return `+91${digits}`;          // assume IN for 10-digit inputs
+      if (digits.length === 12 && digits.startsWith('91')) return `+${digits}`; // 91xxxxxxxxxx -> +91...
+      if (p.startsWith('+')) return p;                          // already E.164
+      return `+${digits}`;                                      // generic fallback
+    };
 
-    if (!phone && !telegram_id) {
+    const { message, phone, telegram_id } = chatRequest;
+    const normalizedPhone = normalizePhone(phone);
+    console.log('Chat request received:', { message, phone_original: phone ?? null, phone_normalized: normalizedPhone ?? null, telegram_id: telegram_id ? 'set' : 'unset' });
+
+    if (!normalizedPhone && !telegram_id) {
       return new Response(
         JSON.stringify({ reply: "Unauthorized: missing identifier (phone/telegram_id)." }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
@@ -106,7 +117,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         message,
-        phone,
+        phone: normalizedPhone ?? phone,
         telegram_id,
       }),
     });
