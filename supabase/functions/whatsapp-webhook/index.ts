@@ -18,10 +18,7 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
-    console.log('WhatsApp webhook received:', JSON.stringify(body, null, 2));
-
-    // WhatsApp webhook verification
+    // WhatsApp webhook verification (GET) must run before reading body
     if (req.method === 'GET') {
       const url = new URL(req.url);
       const mode = url.searchParams.get('hub.mode');
@@ -34,6 +31,9 @@ serve(async (req) => {
       }
       return new Response('Forbidden', { status: 403 });
     }
+
+    const body = await req.json();
+    console.log('WhatsApp webhook received:', JSON.stringify(body, null, 2));
 
     // Extract message from WhatsApp webhook payload
     const entry = body.entry?.[0];
