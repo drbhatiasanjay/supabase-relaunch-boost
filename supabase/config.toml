@@ -3,6 +3,9 @@ project_id = "hehvnfeaekpaltkfkvxd"
 [functions.chat-webhook]
 verify_jwt = false
 
+[functions.whatsapp-webhook]
+verify_jwt = false
+
 [functions.analyze-personality]
 verify_jwt = true
 
