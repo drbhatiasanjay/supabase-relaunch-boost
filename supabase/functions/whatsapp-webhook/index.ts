@@ -13,6 +13,7 @@ interface WhatsAppMessage {
 }
 
 serve(async (req) => {
+  console.log('whatsapp-webhook invoked:', req.method, new Date().toISOString());
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
